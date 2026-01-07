@@ -3,34 +3,36 @@ package com.sitekit.userManagementModule.entity;
 import com.sitekit.utilityModule.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "ACCESS_MANAGEMENT_ENGINE_USER")
+@Setter
+@Table(name = "access_management_engine_user")
 public class UserEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "USER_NAME")
+    @Column(name = "username")
     private String username;
 
-    @Column(name = "EMAIL_ADDRESS")
+    @Column(name = "email_address")
     private String emailAddress;
 
-    @Column(name = "PASSWORD")
+    @Column(name = "password")
     private String password;
 
-    @Column(name = "ROLE")
+    @Column(name = "role")
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @Column(name = "CREATED_ON")
+    @Column(name = "created_on")
     private LocalDateTime createdOn;
 
-    @Column(name = "LAST_UPDATE_ON")
+    @Column(name = "last_update_on")
     private LocalDateTime lastUpdatedOn;
 }

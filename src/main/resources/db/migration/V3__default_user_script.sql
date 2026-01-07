@@ -1,6 +1,6 @@
 INSERT INTO access_management_engine_user (
     id,
-    user_name,
+    username,
     email_address,
     password,
     role,

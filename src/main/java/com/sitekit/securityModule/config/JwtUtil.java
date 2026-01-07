@@ -14,15 +14,6 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-//    @Value("${jwt.secret-key}")
-//    private String secretKey;
-//
-//    @Value("${jwt.access-token-validity}")
-//    private long accessTokenValidity;
-//
-//    @Value("${jwt.refresh-token-validity}")
-//    private long refreshTokenValidity;
-
     private final Key key;
 
     private final long accessTokenValidity;
