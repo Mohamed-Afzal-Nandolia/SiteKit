@@ -1,0 +1,28 @@
+INSERT INTO access_management_engine_user (
+    id,
+    username,
+    email_address,
+    password,
+    role,
+    created_on,
+    last_update_on
+)
+VALUES
+(
+    1,
+    'admin',
+    'Admin@sitekit.com',
+    '$2a$12$Q7KgXVmMo8gbMhw83uMh.OgZRaS6/aVrq5HjfvkicVR0ePCpKBssi',
+    'ADMIN',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+),
+(
+    2,
+    'user1',
+    'User1@sitekit.com',
+    '$2a$12$BfrmXM3CEMK2TdNvvSFep.od8fX.T6bv469bDgcl5IDn.GYhY2zQy',
+    'USER',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+);
