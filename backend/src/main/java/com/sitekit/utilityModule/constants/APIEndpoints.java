@@ -6,6 +6,7 @@ public interface APIEndpoints {
     String AUTH = "/auth";
     String AUTH_LOGIN = "/login";
     String AUTH_LOGOUT = "/logout";
+    String AUTH_REFRESH = "/refresh";
     String GET_ALL_USERS = "/get-all-users";
     String GET_USER_BY_ID = "/get-user";
     String CREATE_USER = "/create-user";

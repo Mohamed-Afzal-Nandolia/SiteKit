@@ -55,8 +55,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       if (onSuccess) {
         onSuccess();
       } else {
-        // Default: redirect to home
-        window.location.href = "/";
+        // Default: redirect to dashboard
+        window.location.href = "/dashboard";
       }
     } catch (error) {
       setErrors({ 

@@ -29,11 +29,6 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(userDTO));
     }
 
-    @PostMapping(APIEndpoints.CREATE_USER)
-    public ResponseEntity<Token> createUser(@Valid @RequestBody UserDTO userDTO, HttpServletResponse response) {
-        return ResponseEntity.ok(userService.createUser(userDTO, response));
-    }
-
     @DeleteMapping(APIEndpoints.DELETE_USER)
     public ResponseEntity<UserDTO> deleteUser(@RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.deleteUser(userDTO));

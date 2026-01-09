@@ -1,7 +1,46 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { isAuthenticated } from "@/api";
 
 export default function Home() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [showPage, setShowPage] = useState(false);
+
+  useEffect(() => {
+    // Initialize theme
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    // Check if user is authenticated
+    if (isAuthenticated()) {
+      // User has valid token - redirect to dashboard
+      router.replace("/dashboard");
+    } else {
+      // User is not authenticated - show the landing page
+      setShowPage(true);
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  // Show loading while checking auth
+  if (isLoading && !showPage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <div className="text-slate-500 dark:text-slate-400">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Navigation */}
@@ -37,7 +76,7 @@ export default function Home() {
             href="/signup"
             className="px-5 py-2.5 rounded-xl bg-[#2563eb] text-white font-medium hover:bg-[#1d4ed8] transition-all shadow-lg shadow-[#2563eb]/25 hover:shadow-[#2563eb]/40 hover:scale-[1.02] active:scale-[0.98]"
           >
-            Get Started Free
+            Get Started
           </Link>
         </div>
       </nav>

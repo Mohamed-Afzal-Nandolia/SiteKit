@@ -7,15 +7,15 @@ import { Input } from "@/components/ui/Input";
 import { createUser } from "@/api";
 
 export function SignupForm() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
-    name?: string;
-    email?: string;
+    username?: string;
+    emailAddress?: string;
     password?: string;
     confirmPassword?: string;
     general?: string;
@@ -24,14 +24,14 @@ export function SignupForm() {
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
-    if (!name.trim()) {
-      newErrors.name = "Name is required";
+    if (!username.trim()) {
+      newErrors.username = "Username is required";
     }
 
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Please enter a valid email";
+    if (!emailAddress) {
+      newErrors.emailAddress = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress)) {
+      newErrors.emailAddress = "Please enter a valid email";
     }
 
     if (!password) {
@@ -63,14 +63,14 @@ export function SignupForm() {
     setErrors({});
 
     try {
-      const response = await createUser({ name, email, password });
+      const response = await createUser({ username, emailAddress, password });
 
       if (response.error) {
         throw new Error(response.error);
       }
 
-      // Redirect to home on success
-      window.location.href = "/";
+      // Redirect to dashboard on success
+      window.location.href = "/dashboard";
     } catch (error) {
       setErrors({
         general:
@@ -138,9 +138,9 @@ export function SignupForm() {
             label="Full Name"
             type="text"
             placeholder="John Doe"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            error={errors.name}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            error={errors.username}
             leftIcon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -160,9 +160,9 @@ export function SignupForm() {
             label="Email"
             type="email"
             placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            error={errors.email}
+            value={emailAddress}
+            onChange={(e) => setEmailAddress(e.target.value)}
+            error={errors.emailAddress}
             leftIcon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"

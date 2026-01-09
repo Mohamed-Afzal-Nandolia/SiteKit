@@ -8,16 +8,18 @@ export interface LoginRequest {
 
 export interface LoginResponse {
     accessToken: string;
+    refreshToken?: string;
 }
 
 export interface CreateUserRequest {
-    name: string;
+    username: string;
     emailAddress: string;
     password: string;
 }
 
 export interface CreateUserResponse {
     accessToken: string;
+    refreshToken?: string;
 }
 
 export interface LogoutResponse {
