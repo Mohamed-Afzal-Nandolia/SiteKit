@@ -1,7 +1,10 @@
 // API Exports
 
 // Config
-export { apiRequest, API_BASE_URL } from "./config";
+export { apiRequest } from "./config";
+
+// URLs
+export { API_BASE_URL, AUTH_ENDPOINTS, ROUTES } from "./urls";
 
 // Types
 export type {

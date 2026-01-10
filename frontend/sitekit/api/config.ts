@@ -1,8 +1,7 @@
 // API Base Configuration
 
 import { isTokenExpired } from "./tokenUtils";
-
-const API_BASE_URL = "http://localhost:8080";
+import { API_BASE_URL } from "./urls";
 
 // Token storage key (must match auth.ts)
 const ACCESS_TOKEN_KEY = "accessToken";
@@ -130,6 +129,3 @@ export async function apiRequest<T>(
         };
     }
 }
-
-export { API_BASE_URL };
-

@@ -9,6 +9,7 @@ import {
     LogoutResponse,
 } from "./types";
 import { isTokenExpired, getValidTokenPayload, JwtPayload } from "./tokenUtils";
+import { AUTH_ENDPOINTS } from "./urls";
 
 // Token storage key
 const ACCESS_TOKEN_KEY = "accessToken";
@@ -78,7 +79,7 @@ export async function refreshAccessToken(): Promise<boolean> {
         }
 
         console.log("[refreshAccessToken] Sending refresh request...");
-        const response = await fetch("http://localhost:8080/auth/refresh", {
+        const response = await fetch(AUTH_ENDPOINTS.REFRESH, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
