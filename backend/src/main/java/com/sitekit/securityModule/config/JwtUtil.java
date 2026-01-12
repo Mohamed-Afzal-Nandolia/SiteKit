@@ -14,29 +14,22 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final Key key;
+    private final Key KEY;
+    private static final long EXPIRATION = 24 * 60 * 60 * 1000;
 
-    private final long accessTokenValidity;
-
-    private final long refreshTokenValidity;
-
-    public JwtUtil(
-            @Value("${jwt.secret-key}") String secret,
-            @Value("${jwt.access-token-validity}") long accessTokenValidity,
-            @Value("${jwt.refresh-token-validity}") long refreshTokenValidity
-    ) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.accessTokenValidity = accessTokenValidity;
-        this.refreshTokenValidity = refreshTokenValidity;
+    public JwtUtil(@Value("${jwt.secret-key}") String secret) {
+        this.KEY = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateAccessToken(String username, String role) {
+        Date now = new Date();
+
         return Jwts.builder()
                 .setSubject(username)
                 .claim("role", role)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenValidity))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setIssuedAt(now)
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .signWith(KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -44,14 +37,14 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenValidity))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .signWith(KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public Claims validateToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(KEY)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -59,7 +52,7 @@ public class JwtUtil {
 
     public Claims extractClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(KEY)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

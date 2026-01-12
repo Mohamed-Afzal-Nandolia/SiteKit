@@ -1,8 +1,6 @@
 package com.sitekit.templateModule.entity;
 
-import com.sitekit.userManagementModule.entity.UserEntity;
 import com.sitekit.utilityModule.enums.PageStatus;
-import com.sitekit.utilityModule.enums.SiteStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(name = "template_module_page")
+@Table(name = "template_module_page", uniqueConstraints = {@UniqueConstraint(columnNames = {"site_id", "slug"})})
 public class PageEntity {
 
     @Id
@@ -20,13 +18,13 @@ public class PageEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "site_id", nullable = false, unique = true)
+    @JoinColumn(name = "site_id", nullable = false)
     private SiteEntity site;
 
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "slug", nullable = false, unique = true)
+    @Column(name = "slug", nullable = false)
     private String slug;
 
     @Enumerated(EnumType.STRING)

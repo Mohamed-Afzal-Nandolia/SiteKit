@@ -23,4 +23,17 @@ public interface APIEndpoints {
     String GET_SITE_BY_ID = "/get-site";
     String UPDATE_SITE_STATUS = "/update-site-status";
 
+    // Page
+    String CREATE_PAGE = "/create-page";
+    String GET_PAGE_BY_SITE_ID = "/get-page";
+    String GET_PAGE_BY_SLUG = "/get-page/slug";
+    String DELETE_PAGE = "/delete-page";
+
+    // Page Section
+    String ADD_SECTION = "/add-section";
+    String GET_SECTIONS = "/get-sections";
+    String UPDATE_SECTION = "/update-section";
+    String DELETE_SECTION = "/delete-section";
+    String REORDER_SECTIONS = "/reorder-sections";
+
 }

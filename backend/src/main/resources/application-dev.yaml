@@ -22,8 +22,8 @@ spring:
 
 jwt:
   secret-key: 5A7134743777217A25432A462D4A614E635266556A586E3272357538782F413F
-  access-token-validity: 300000 # 5 min
-  refresh-token-validity: 86400000 # 1 day
+#  access-token-validity: 86400000 # 5 min -> 300000
+#  refresh-token-validity: 86400000 # 1 day
 
 #logging:
 #  level:

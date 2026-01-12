@@ -1,10 +1,12 @@
 package com.sitekit.templateModule.service;
 
 import com.sitekit.templateModule.model.SiteDTO;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
 
+@Repository
 public interface SiteService {
 
     public List<SiteDTO> getAllSite(SiteDTO siteDTO);
