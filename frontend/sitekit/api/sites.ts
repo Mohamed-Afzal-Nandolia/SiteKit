@@ -90,3 +90,16 @@ export async function renameSite(
         body: JSON.stringify(request),
     });
 }
+
+/**
+ * Update site details (name and domain)
+ * @param request - Request with user ID, site ID, name, and domain
+ */
+export async function updateSite(
+    request: { user: { id: number }; id: number; name: string; domain: string }
+): Promise<ApiResponse<ApiSuccessMessage>> {
+    return apiRequest<ApiSuccessMessage>(SITE_ENDPOINTS.UPDATE_SITE_NAME, {
+        method: "PATCH",
+        body: JSON.stringify(request),
+    });
+}

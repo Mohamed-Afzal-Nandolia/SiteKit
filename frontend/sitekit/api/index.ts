@@ -72,6 +72,7 @@ export {
     deleteSite,
     updateSiteStatus,
     renameSite,
+    updateSite,
 } from "./sites";
 
 // Page API Service

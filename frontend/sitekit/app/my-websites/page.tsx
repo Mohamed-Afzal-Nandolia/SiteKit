@@ -9,7 +9,7 @@ import {
     getAllSites,
     createSite,
     deleteSite,
-    renameSite,
+    updateSite,
 } from "@/api";
 import type { JwtPayload, SiteDTO } from "@/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -42,11 +42,13 @@ export default function MyWebsitesPage() {
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Inline editing state
-    const [editingSiteId, setEditingSiteId] = useState<number | null>(null);
-    const [editingName, setEditingName] = useState("");
-    const [isSavingName, setIsSavingName] = useState(false);
-    const editInputRef = useRef<HTMLInputElement>(null);
+    // Rename modal state
+    const [showRenameModal, setShowRenameModal] = useState(false);
+    const [siteToRename, setSiteToRename] = useState<SiteDTO | null>(null);
+    const [renameName, setRenameName] = useState("");
+    const [renameDomain, setRenameDomain] = useState("");
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [renameError, setRenameError] = useState<string | null>(null);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -60,13 +62,7 @@ export default function MyWebsitesPage() {
         return () => document.removeEventListener("click", handleClickOutside);
     }, [openDropdownId]);
 
-    // Focus input when editing starts
-    useEffect(() => {
-        if (editingSiteId && editInputRef.current) {
-            editInputRef.current.focus();
-            editInputRef.current.select();
-        }
-    }, [editingSiteId]);
+
 
     // Fetch all sites for the user
     const fetchSites = useCallback(async (userId: number) => {
@@ -179,51 +175,46 @@ export default function MyWebsitesPage() {
         }
     };
 
-    // Handle renaming a site
-    const handleRenameSite = async (siteId: number) => {
-        if (!user?.userId || !editingName.trim()) return;
+    // Handle updating a site
+    const handleUpdateSite = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user?.userId || !siteToRename?.id || !renameName.trim() || !renameDomain.trim()) return;
 
-        setIsSavingName(true);
+        setIsRenaming(true);
+        setRenameError(null);
 
         try {
-            const response = await renameSite({
+            const response = await updateSite({
                 user: { id: user.userId },
-                id: siteId,
-                name: editingName.trim(),
+                id: siteToRename.id,
+                name: renameName.trim(),
+                domain: renameDomain.trim(),
             });
 
             if (response.data) {
                 await fetchSites(user.userId);
-                setEditingSiteId(null);
-                setEditingName("");
+                setShowRenameModal(false);
+                setSiteToRename(null);
+                setRenameName("");
+                setRenameDomain("");
+            } else if (response.error) {
+                setRenameError(response.error);
             }
         } catch (error) {
-            console.error("Error renaming site:", error);
+            setRenameError("Failed to update site");
+            console.error("Error updating site:", error);
         } finally {
-            setIsSavingName(false);
+            setIsRenaming(false);
         }
     };
 
-    // Start editing a site name
-    const startEditing = (site: SiteDTO) => {
-        setEditingSiteId(site.id || null);
-        setEditingName(site.name || "");
+    // Open rename modal
+    const handleRenameClick = (site: SiteDTO) => {
+        setSiteToRename(site);
+        setRenameName(site.name || "");
+        setRenameDomain(site.domain || "");
+        setShowRenameModal(true);
         setOpenDropdownId(null);
-    };
-
-    // Cancel editing
-    const cancelEditing = () => {
-        setEditingSiteId(null);
-        setEditingName("");
-    };
-
-    // Handle key press in edit input
-    const handleEditKeyDown = (e: React.KeyboardEvent, siteId: number) => {
-        if (e.key === "Enter") {
-            handleRenameSite(siteId);
-        } else if (e.key === "Escape") {
-            cancelEditing();
-        }
     };
 
     // Format date for display
@@ -445,50 +436,13 @@ export default function MyWebsitesPage() {
                                                             {site.name?.charAt(0).toUpperCase() || "S"}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            {editingSiteId === site.id ? (
-                                                                <div className="flex items-center gap-2">
-                                                                    <input
-                                                                        ref={editInputRef}
-                                                                        type="text"
-                                                                        value={editingName}
-                                                                        onChange={(e) => setEditingName(e.target.value)}
-                                                                        onKeyDown={(e) => handleEditKeyDown(e, site.id!)}
-                                                                        className="px-2 py-1 text-sm border border-[#2563eb] rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/50"
-                                                                        disabled={isSavingName}
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => handleRenameSite(site.id!)}
-                                                                        disabled={isSavingName || !editingName.trim()}
-                                                                        className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded disabled:opacity-50 cursor-pointer"
-                                                                        title="Save"
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                            <polyline points="20 6 9 17 4 12" />
-                                                                        </svg>
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={cancelEditing}
-                                                                        disabled={isSavingName}
-                                                                        className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer"
-                                                                        title="Cancel"
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                            <line x1="18" y1="6" x2="6" y2="18" />
-                                                                            <line x1="6" y1="6" x2="18" y2="18" />
-                                                                        </svg>
-                                                                    </button>
+                                                            <div className="font-medium text-slate-900 dark:text-white truncate">
+                                                                {site.name}
+                                                            </div>
+                                                            {site.domain && (
+                                                                <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                                                                    {site.domain}
                                                                 </div>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="font-medium text-slate-900 dark:text-white truncate">
-                                                                        {site.name}
-                                                                    </div>
-                                                                    {site.domain && (
-                                                                        <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                                                                            {site.domain}
-                                                                        </div>
-                                                                    )}
-                                                                </>
                                                             )}
                                                         </div>
                                                     </div>
@@ -507,7 +461,6 @@ export default function MyWebsitesPage() {
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="relative inline-block" ref={openDropdownId === site.id ? dropdownRef : null}>
                                                         <button
-                                                            onMouseDown={(e) => e.stopPropagation()}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setOpenDropdownId(openDropdownId === site.id ? null : site.id!);
@@ -531,7 +484,7 @@ export default function MyWebsitesPage() {
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        startEditing(site);
+                                                                        handleRenameClick(site);
                                                                     }}
                                                                     className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
                                                                 >
@@ -578,90 +531,57 @@ export default function MyWebsitesPage() {
                                                     {site.name?.charAt(0).toUpperCase() || "S"}
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    {editingSiteId === site.id ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="text"
-                                                                value={editingName}
-                                                                onChange={(e) => setEditingName(e.target.value)}
-                                                                onKeyDown={(e) => handleEditKeyDown(e, site.id!)}
-                                                                className="px-2 py-1 text-sm border border-[#2563eb] rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none w-full"
-                                                                disabled={isSavingName}
-                                                                autoFocus
-                                                            />
-                                                            <button
-                                                                onClick={() => handleRenameSite(site.id!)}
-                                                                disabled={isSavingName || !editingName.trim()}
-                                                                className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded disabled:opacity-50 cursor-pointer"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <polyline points="20 6 9 17 4 12" />
-                                                                </svg>
-                                                            </button>
-                                                            <button
-                                                                onClick={cancelEditing}
-                                                                className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                                                </svg>
-                                                            </button>
+                                                    <div className="font-medium text-slate-900 dark:text-white truncate">
+                                                        {site.name}
+                                                    </div>
+                                                    {site.domain && (
+                                                        <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                                                            {site.domain}
                                                         </div>
-                                                    ) : (
-                                                        <>
-                                                            <div className="font-medium text-slate-900 dark:text-white truncate">
-                                                                {site.name}
-                                                            </div>
-                                                            {site.domain && (
-                                                                <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                                                                    {site.domain}
-                                                                </div>
-                                                            )}
-                                                            <div className="flex items-center gap-2 mt-2">
-                                                                <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(site.siteStatus)}`}>
-                                                                    {site.siteStatus || "DRAFT"}
-                                                                </span>
-                                                                <span className="text-xs text-slate-500 dark:text-slate-400">
-                                                                    {formatDate(site.lastUpdatedOn)}
-                                                                </span>
-                                                            </div>
-                                                        </>
                                                     )}
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(site.siteStatus)}`}>
+                                                            {site.siteStatus || "DRAFT"}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                            {formatDate(site.lastUpdatedOn)}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            {editingSiteId !== site.id && (
-                                                <div className="relative" ref={openDropdownId === site.id ? dropdownRef : null}>
-                                                    <button
-                                                        onClick={() => setOpenDropdownId(openDropdownId === site.id ? null : site.id!)}
-                                                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg cursor-pointer"
+                                            <div className="relative" ref={openDropdownId === site.id ? dropdownRef : null}>
+                                                <button
+                                                    onClick={() => setOpenDropdownId(openDropdownId === site.id ? null : site.id!)}
+                                                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg cursor-pointer"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                        <circle cx="12" cy="5" r="2" />
+                                                        <circle cx="12" cy="12" r="2" />
+                                                        <circle cx="12" cy="19" r="2" />
+                                                    </svg>
+                                                </button>
+                                                
+                                                {openDropdownId === site.id && (
+                                                    <div 
+                                                        className="absolute right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50"
+                                                        onClick={(e) => e.stopPropagation()}
                                                     >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                                                            <circle cx="12" cy="5" r="2" />
-                                                            <circle cx="12" cy="12" r="2" />
-                                                            <circle cx="12" cy="19" r="2" />
-                                                        </svg>
-                                                    </button>
-                                                    
-                                                    {openDropdownId === site.id && (
-                                                        <div 
-                                                            className="absolute right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50"
-                                                            onMouseDown={(e) => e.stopPropagation()}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRenameClick(site);
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
                                                         >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                            </svg>
+                                                            Rename
+                                                        </button>
                                                             <button
-                                                                onMouseDown={(e) => e.stopPropagation()}
-                                                                onClick={() => startEditing(site)}
-                                                                className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                                </svg>
-                                                                Rename
-                                                            </button>
-                                                            <button
-                                                                onMouseDown={(e) => e.stopPropagation()}
-                                                                onClick={() => {
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
                                                                     setSiteToDelete(site);
                                                                     setOpenDropdownId(null);
                                                                 }}
@@ -676,15 +596,87 @@ export default function MyWebsitesPage() {
                                                         </div>
                                                     )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
                                 ))}
                             </div>
                         </>
                     )}
                 </div>
             </main>
+
+            {/* Rename Site Modal */}
+            {showRenameModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-700">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+                            Rename Site
+                        </h2>
+                        
+                        <form onSubmit={handleUpdateSite}>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Site Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={renameName}
+                                        onChange={(e) => setRenameName(e.target.value)}
+                                        placeholder="My Awesome Website"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/50 focus:border-[#2563eb]"
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Domain *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={renameDomain}
+                                        onChange={(e) => setRenameDomain(e.target.value)}
+                                        placeholder="mywebsite.com"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/50 focus:border-[#2563eb]"
+                                        required
+                                    />
+                                </div>
+
+                                {renameError && (
+                                    <div className="text-sm text-red-500 dark:text-red-400">
+                                        {renameError}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowRenameModal(false);
+                                        setSiteToRename(null);
+                                        setRenameName("");
+                                        setRenameDomain("");
+                                        setRenameError(null);
+                                    }}
+                                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isRenaming || !renameName.trim() || !renameDomain.trim()}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-[#2563eb] text-white font-medium hover:bg-[#1d4ed8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isRenaming ? "Saving..." : "Save Changes"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Create Site Modal */}
             {showCreateModal && (
@@ -775,7 +767,7 @@ export default function MyWebsitesPage() {
                         </h2>
                         
                         <p className="text-slate-600 dark:text-slate-400 text-center mb-6">
-                            Are you sure you want to delete <strong>&quot;{siteToDelete.name}&quot;</strong>? This action cannot be undone.
+                            Are you sure you want to delete <strong>&quot;{siteToDelete?.name}&quot;</strong>? This action cannot be undone.
                         </p>
 
                         <div className="flex gap-3">
