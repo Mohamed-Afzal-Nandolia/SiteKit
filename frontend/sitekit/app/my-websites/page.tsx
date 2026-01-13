@@ -254,7 +254,7 @@ export default function MyWebsitesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
             {/* Header */}
             <header className="sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -302,7 +302,7 @@ export default function MyWebsitesPage() {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="flex-1 flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
                 {/* Page Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                     <div>
@@ -326,7 +326,7 @@ export default function MyWebsitesPage() {
                 </div>
 
                 {/* Sites Table Container */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     {/* Toolbar */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-slate-200 dark:border-slate-800">
                         <div className="flex items-center gap-3">
@@ -425,7 +425,7 @@ export default function MyWebsitesPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                        {filteredSites.map((site) => (
+                                        {filteredSites.map((site, index) => (
                                             <tr 
                                                 key={site.id} 
                                                 className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
@@ -478,7 +478,9 @@ export default function MyWebsitesPage() {
                                                         {/* Dropdown Menu */}
                                                         {openDropdownId === site.id && (
                                                             <div 
-                                                                className="absolute right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50"
+                                                                className={`absolute right-0 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 ${
+                                                                    index >= filteredSites.length - 2 ? "bottom-full mb-1 origin-bottom-right" : "top-full mt-1 origin-top-right"
+                                                                }`}
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <button
@@ -520,7 +522,7 @@ export default function MyWebsitesPage() {
 
                             {/* Mobile Card View */}
                             <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-800">
-                                {filteredSites.map((site) => (
+                                {filteredSites.map((site, index) => (
                                     <div 
                                         key={site.id}
                                         className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
@@ -563,7 +565,9 @@ export default function MyWebsitesPage() {
                                                 
                                                 {openDropdownId === site.id && (
                                                     <div 
-                                                        className="absolute right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50"
+                                                        className={`absolute right-0 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 ${
+                                                            index >= filteredSites.length - 2 ? "bottom-full mb-1 origin-bottom-right" : "top-full mt-1 origin-top-right"
+                                                        }`}
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
                                                         <button
