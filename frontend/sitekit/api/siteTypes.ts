@@ -155,4 +155,5 @@ export interface TemplateDTO {
 export interface ApiSuccessMessage {
     success?: string;
     message?: string;
+    id?: string;
 }

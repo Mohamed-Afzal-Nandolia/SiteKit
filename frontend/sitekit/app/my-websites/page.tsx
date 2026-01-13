@@ -428,7 +428,8 @@ export default function MyWebsitesPage() {
                                         {filteredSites.map((site, index) => (
                                             <tr 
                                                 key={site.id} 
-                                                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                                                onClick={() => router.push(`/${site.id}/edit`)}
+                                                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                                             >
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
@@ -525,7 +526,8 @@ export default function MyWebsitesPage() {
                                 {filteredSites.map((site, index) => (
                                     <div 
                                         key={site.id}
-                                        className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                        onClick={() => router.push(`/${site.id}/edit`)}
+                                        className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex items-center gap-3 min-w-0 flex-1">

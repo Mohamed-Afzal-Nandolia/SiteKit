@@ -53,7 +53,9 @@ public class SiteServiceImpl implements SiteService {
         siteEntity.setSiteStatus(SiteStatus.DRAFT);
         siteEntity.setUser(user);
         SiteEntity save = siteRepository.save(siteEntity);
-        return Map.of("success", "Site '" + save.getName() +"' created successfully");
+        return Map.of(
+                "success", "Site '" + save.getName() + "' created successfully",
+                "id", String.valueOf(save.getId()));
     }
 
     @Override
@@ -72,7 +74,7 @@ public class SiteServiceImpl implements SiteService {
         SiteEntity siteEntity = siteRepository.findById(siteDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Site not found"));
 
-        if(siteDTO.getSiteStatus().equals(siteEntity.getSiteStatus()))
+        if (siteDTO.getSiteStatus().equals(siteEntity.getSiteStatus()))
             throw new ResourceAlreadyExists("Status is already '" + siteEntity.getSiteStatus() + "'");
 
         siteEntity.setSiteStatus(siteDTO.getSiteStatus());
@@ -87,7 +89,7 @@ public class SiteServiceImpl implements SiteService {
         SiteEntity siteEntity = siteRepository.findById(siteDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Site not found"));
 
-        if(siteRepository.existsByDomain(siteDTO.getDomain()))
+        if (siteRepository.existsByDomain(siteDTO.getDomain()))
             throw new ResourceAlreadyExists("Domain is already '" + siteEntity.getDomain() + "'");
 
         siteEntity.setDomain(siteDTO.getDomain());
