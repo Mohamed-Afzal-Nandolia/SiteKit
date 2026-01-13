@@ -40,6 +40,8 @@ export type {
     DeleteSectionRequest,
     ReorderSectionsRequest,
     ApiSuccessMessage,
+    TemplateDTO,
+    TemplateCategory,
 } from "./siteTypes";
 
 // Token Utilities
@@ -90,3 +92,9 @@ export {
     deleteSection,
     reorderSections,
 } from "./sections";
+
+// Template API Service
+export {
+    getAllTemplates,
+    getAllSiteTemplates,
+} from "./templates";

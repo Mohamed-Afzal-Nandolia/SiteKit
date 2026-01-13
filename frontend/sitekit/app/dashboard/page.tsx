@@ -190,7 +190,10 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Templates Card */}
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group">
+                    <div 
+                        onClick={() => router.push("/templates")}
+                        className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group"
+                    >
                         <div className="text-4xl mb-4">📄</div>
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
                             Templates

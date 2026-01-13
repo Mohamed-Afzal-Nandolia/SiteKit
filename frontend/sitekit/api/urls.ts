@@ -26,6 +26,12 @@ export const SITE_ENDPOINTS = {
     UPDATE_SITE_NAME: `${API_V1}/update-site-name`,
 } as const;
 
+// Template Endpoints
+export const TEMPLATE_ENDPOINTS = {
+    GET_ALL_TEMPLATES: `${API_V1}/get-all-templates`,
+    GET_ALL_SITE_TEMPLATES: `${API_V1}/get-all-site-templates`,
+} as const;
+
 // Page Endpoints
 export const PAGE_ENDPOINTS = {
     CREATE_PAGE: `${API_V1}/create-page`,

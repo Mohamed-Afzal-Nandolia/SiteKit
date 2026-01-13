@@ -1,0 +1,79 @@
+import React from "react";
+import type { PageSectionDTO } from "@/api";
+
+// Import Variants
+import { HeaderV1 } from "../sections/Header/HeaderV1";
+import { HeroV1 } from "../sections/Hero/HeroV1";
+import { ContentV1 } from "../sections/Content/ContentV1";
+import { CtaV1 } from "../sections/CTA/CtaV1";
+import { FooterV1 } from "../sections/Footer/FooterV1";
+
+// Registry Type
+type ComponentRegistry = Record<string, Record<string, React.FC<{ config: any }>>>;
+
+// Registry Mapping
+const SECTION_REGISTRY: ComponentRegistry = {
+    HEADER: {
+        "header_v1": HeaderV1,
+        "default": HeaderV1,
+    },
+    HERO: {
+        "hero_v1": HeroV1,
+        "default": HeroV1,
+    },
+    CONTENT: {
+        "content_v1": ContentV1,
+        "default": ContentV1,
+    },
+    CTA: {
+        "cta_v1": CtaV1,
+        "default": CtaV1,
+    },
+    FOOTER: {
+        "footer_v1": FooterV1,
+        "default": FooterV1,
+    }
+};
+
+export function SectionRenderer({ section }: { section: PageSectionDTO }) {
+    const { sectionType, variant, config, configJson } = section;
+
+    if (!sectionType) return null;
+
+    // Resolve Component
+    const variants = SECTION_REGISTRY[sectionType];
+    if (!variants) {
+        console.warn(`No registry found for section type: ${sectionType}`);
+        return null;
+    }
+
+    const Component = variants[variant || "default"] || variants["default"];
+    
+    if (!Component) {
+        console.warn(`No component found for variant: ${variant} of type ${sectionType}`);
+        return null;
+    }
+
+    // Parse config
+    // Priority: configJson (API) -> config (if already object) -> config (if string)
+    let parsedConfig: any = {};
+    
+    if (configJson) {
+        try {
+            parsedConfig = JSON.parse(configJson);
+        } catch (e) {
+            console.error("Failed to parse section configJson", e);
+        }
+    } else if (typeof config === "string") {
+        try {
+            parsedConfig = JSON.parse(config);
+        } catch (e) {
+            console.error("Failed to parse section config string", e);
+            parsedConfig = {};
+        }
+    } else if (config) {
+        parsedConfig = config;
+    }
+
+    return <Component config={parsedConfig} />;
+}
