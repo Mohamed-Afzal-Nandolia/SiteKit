@@ -95,4 +95,5 @@ public class SiteServiceImpl implements SiteService {
         siteRepository.save(siteEntity);
         return Map.of("success", "Site '" + siteEntity.getName() + "' updated successfully");
     }
+
 }
