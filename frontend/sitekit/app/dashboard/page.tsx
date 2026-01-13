@@ -173,29 +173,45 @@ export default function DashboardPage() {
                     )}
                 </div>
 
-                {/* Placeholder Cards */}
+                {/* Action Cards */}
                 <div className="grid md:grid-cols-3 gap-6 mt-8">
-                    {[
-                        { title: "My Websites", desc: "Manage your websites", icon: "🌐" },
-                        { title: "Templates", desc: "Browse templates", icon: "📄" },
-                        { title: "Settings", desc: "Account settings", icon: "⚙️" },
-                    ].map((item) => (
-                        <div
-                            key={item.title}
-                            className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg transition-shadow cursor-pointer"
-                        >
-                            <div className="text-4xl mb-4">{item.icon}</div>
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-                                {item.title}
-                            </h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                {item.desc}
-                            </p>
-                        </div>
-                    ))}
+                    {/* My Websites Card - Clickable */}
+                    <div
+                        onClick={() => router.push("/my-websites")}
+                        className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group"
+                    >
+                        <div className="text-4xl mb-4">🌐</div>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                            My Websites
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            Manage your websites
+                        </p>
+                    </div>
+
+                    {/* Templates Card */}
+                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group">
+                        <div className="text-4xl mb-4">📄</div>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                            Templates
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            Browse templates
+                        </p>
+                    </div>
+
+                    {/* Settings Card */}
+                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group">
+                        <div className="text-4xl mb-4">⚙️</div>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                            Settings
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            Account settings
+                        </p>
+                    </div>
                 </div>
             </main>
         </div>
     );
 }
-

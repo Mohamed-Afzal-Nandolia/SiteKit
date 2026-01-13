@@ -14,4 +14,6 @@ public interface SiteRepository extends JpaRepository<SiteEntity, Long> {
 
     Optional<SiteEntity> findByIdAndUserId(Long siteId, Long userId);
 
+    boolean existsByDomain(String domain);
+
 }

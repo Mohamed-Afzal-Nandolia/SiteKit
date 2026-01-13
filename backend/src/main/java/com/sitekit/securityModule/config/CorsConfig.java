@@ -24,7 +24,7 @@ public class CorsConfig {
 
         // Allow all HTTP methods
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
 
         // Allow headers (IMPORTANT for JWT)

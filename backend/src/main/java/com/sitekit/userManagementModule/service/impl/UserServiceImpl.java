@@ -43,7 +43,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Token createUser(UserDTO user, HttpServletResponse response) {
-        if(!userUtils.checkUserExists(user.getEmailAddress())){
+        if (!userUtils.checkUserExists(user.getEmailAddress())) {
             throw new ResourceNotFoundException("User already exists with email: " + user.getEmailAddress());
         }
 
@@ -59,8 +59,9 @@ public class UserServiceImpl implements UserService {
 
         String accessToken = jwtUtil.generateAccessToken(
                 savedUser.getEmailAddress(),
-                savedUser.getRole().toString()
-        );
+                savedUser.getRole().toString(),
+                savedUser.getId()
+            );
 
         String refreshToken = jwtUtil.generateRefreshToken(savedUser.getEmailAddress());
 

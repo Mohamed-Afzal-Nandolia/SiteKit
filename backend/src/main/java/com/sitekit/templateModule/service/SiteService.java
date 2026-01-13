@@ -19,4 +19,6 @@ public interface SiteService {
 
     public Map<String, String> updateSiteStatus(SiteDTO siteDTO);
 
+    public Map<String, String> updateSiteName(SiteDTO siteDTO);
+
 }

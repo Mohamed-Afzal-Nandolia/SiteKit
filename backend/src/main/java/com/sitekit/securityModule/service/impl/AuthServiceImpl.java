@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-
 @RequiredArgsConstructor
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -34,17 +33,16 @@ public class AuthServiceImpl implements AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmailAddress(),
-                        request.getPassword()
-                )
-        );
+                        request.getPassword()));
 
         UserEntity user = userRepository.findByEmailAddress(request.getEmailAddress())
                 .orElseThrow();
 
         String accessToken = jwtUtil.generateAccessToken(
                 user.getEmailAddress(),
-                user.getRole().toString()
-        );
+                user.getRole().toString(),
+                user.getId()
+            );
 
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmailAddress());
 
@@ -86,7 +84,8 @@ public class AuthServiceImpl implements AuthService {
             UserEntity user = userRepository.findByEmailAddress(userEmail)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            String newAccessToken = jwtUtil.generateAccessToken(user.getEmailAddress(), user.getRole().toString());
+            String newAccessToken = jwtUtil.generateAccessToken(user.getEmailAddress(), user.getRole().toString(),
+                    user.getId());
 
             String newRefreshToken = jwtUtil.generateRefreshToken(user.getEmailAddress());
 

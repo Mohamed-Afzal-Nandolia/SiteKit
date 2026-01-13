@@ -3,6 +3,7 @@
 export interface JwtPayload {
     sub: string; // subject (usually email or user id)
     role?: string;
+    userId?: number; // user's database ID
     iat: number; // issued at (unix timestamp)
     exp: number; // expiration (unix timestamp)
     [key: string]: unknown; // allow additional claims
