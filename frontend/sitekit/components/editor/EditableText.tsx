@@ -29,12 +29,23 @@ export function EditableText({
     const { isEditMode } = useEditor();
     const elementRef = useRef<HTMLElement>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [localValue, setLocalValue] = useState(value);
+    // Track if we've initialized the content
+    const isInitialized = useRef(false);
 
-    // Sync local value with prop changes
+    // Set initial content only once when entering edit mode or on mount
     useEffect(() => {
-        setLocalValue(value);
-    }, [value]);
+        if (elementRef.current && !isInitialized.current) {
+            elementRef.current.innerText = value || placeholder;
+            isInitialized.current = true;
+        }
+    }, [value, placeholder]);
+
+    // Update content when value changes from parent (but not during editing)
+    useEffect(() => {
+        if (elementRef.current && !isEditing) {
+            elementRef.current.innerText = value || placeholder;
+        }
+    }, [value, placeholder, isEditing]);
 
     // Handle entering edit mode
     const handleClick = () => {
@@ -44,10 +55,11 @@ export function EditableText({
             setTimeout(() => {
                 if (elementRef.current) {
                     elementRef.current.focus();
-                    // Select all text
+                    // Move cursor to end instead of selecting all
                     const range = document.createRange();
-                    range.selectNodeContents(elementRef.current);
                     const selection = window.getSelection();
+                    range.selectNodeContents(elementRef.current);
+                    range.collapse(false); // false = collapse to end
                     selection?.removeAllRanges();
                     selection?.addRange(range);
                 }
@@ -55,27 +67,21 @@ export function EditableText({
         }
     };
 
-    // Handle text changes
-    const handleInput = () => {
-        if (elementRef.current) {
-            const newText = elementRef.current.innerText;
-            setLocalValue(newText);
-        }
-    };
-
     // Handle blur - save changes
     const handleBlur = () => {
         setIsEditing(false);
-        if (localValue !== value) {
-            onUpdate(localValue);
+        if (elementRef.current) {
+            const newText = elementRef.current.innerText;
+            if (newText !== value) {
+                onUpdate(newText);
+            }
         }
     };
 
     // Handle keyboard events
-    const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
         if (e.key === "Escape") {
             // Cancel editing, restore original value
-            setLocalValue(value);
             if (elementRef.current) {
                 elementRef.current.innerText = value;
             }
@@ -105,20 +111,20 @@ export function EditableText({
         transition-all duration-150
     `.trim().replace(/\s+/g, " ");
 
+    // Use dangerouslySetInnerHTML for initial render, then let DOM handle edits
+    // This prevents React from resetting cursor position on re-renders
     return (
         <Component
             ref={elementRef as React.RefObject<any>}
             className={editModeClass}
-            contentEditable={isEditMode}
+            contentEditable={true}
             suppressContentEditableWarning={true}
             onClick={handleClick}
-            onInput={handleInput}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             style={{ minWidth: "20px", display: "inline-block" }}
-        >
-            {localValue || placeholder}
-        </Component>
+            dangerouslySetInnerHTML={{ __html: value || placeholder }}
+        />
     );
 }
 

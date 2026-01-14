@@ -2,13 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import type { PageSectionDTO } from "@/api";
-import { updateSection } from "@/api";
-
-// Types for pending changes
-interface PendingChange {
-    sectionId: number;
-    config: Record<string, unknown>;
-}
+import { updateSection, deleteSection } from "@/api";
 
 // Editor Context State
 interface EditorContextState {
@@ -30,6 +24,13 @@ interface EditorContextState {
     
     // Pending changes tracking
     pendingChanges: Map<number, Record<string, unknown>>;
+    
+    // Pending deletions tracking (soft delete)
+    pendingDeletions: Set<number>;
+    markSectionForDeletion: (sectionId: number) => void;
+    restoreSection: (sectionId: number) => void;
+    
+    // Check if there are any pending changes (config updates or deletions)
     hasPendingChanges: boolean;
     
     // Save functionality
@@ -48,6 +49,9 @@ const defaultContextValue: EditorContextState = {
     updateSectionConfig: () => {},
     getSectionConfig: () => null,
     pendingChanges: new Map(),
+    pendingDeletions: new Set(),
+    markSectionForDeletion: () => {},
+    restoreSection: () => {},
     hasPendingChanges: false,
     saveAllChanges: async () => ({ success: false }),
     isSaving: false,
@@ -69,6 +73,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     
     // Pending changes map: sectionId -> updated config
     const [pendingChanges, setPendingChanges] = useState<Map<number, Record<string, unknown>>>(new Map());
+    
+    // Pending deletions set: section IDs marked for deletion (soft delete)
+    const [pendingDeletions, setPendingDeletions] = useState<Set<number>>(new Set());
     
     // Saving state
     const [isSaving, setIsSaving] = useState(false);
@@ -92,8 +99,27 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     // Set sections (used when loading from API)
     const setSections = useCallback((newSections: PageSectionDTO[]) => {
         setSectionsState(newSections);
-        // Clear pending changes when new sections are loaded
+        // Clear pending changes and deletions when new sections are loaded
         setPendingChanges(new Map());
+        setPendingDeletions(new Set());
+    }, []);
+
+    // Mark a section for deletion (soft delete - only removes from UI)
+    const markSectionForDeletion = useCallback((sectionId: number) => {
+        setPendingDeletions(prev => {
+            const updated = new Set(prev);
+            updated.add(sectionId);
+            return updated;
+        });
+    }, []);
+
+    // Restore a section (undo soft delete)
+    const restoreSection = useCallback((sectionId: number) => {
+        setPendingDeletions(prev => {
+            const updated = new Set(prev);
+            updated.delete(sectionId);
+            return updated;
+        });
     }, []);
 
     // Get section config (with pending changes applied)
@@ -144,22 +170,23 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         }));
     }, []);
 
-    // Save all pending changes to backend
+    // Save all pending changes (config updates AND deletions) to backend
     const saveAllChanges = useCallback(async (userId: number): Promise<{ success: boolean; error?: string }> => {
-        if (pendingChanges.size === 0) {
-            return { success: true };
-        }
-
         setIsSaving(true);
 
         try {
-            const savePromises: Promise<any>[] = [];
+            const allPromises: Promise<any>[] = [];
+            const errors: string[] = [];
 
+            // 1. Handle config updates (skip sections that are pending deletion)
             pendingChanges.forEach((config, sectionId) => {
+                // Don't update config for sections that will be deleted
+                if (pendingDeletions.has(sectionId)) return;
+
                 const section = sections.find(s => s.id === sectionId);
                 if (section) {
                     const configString = JSON.stringify(config);
-                    savePromises.push(
+                    allPromises.push(
                         updateSection({
                             id: sectionId,
                             userId: userId,
@@ -167,25 +194,43 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                             sectionType: section.sectionType,
                             variant: section.variant,
                             position: section.position,
-                            // Send both config and configJson as strings to cover both backend paths
                             config: configString,
                             configJson: configString,
+                        }).catch(err => {
+                            errors.push(`Failed to update section ${sectionId}`);
+                            return { error: err };
                         })
                     );
                 }
             });
 
-            const results = await Promise.all(savePromises);
+            // 2. Handle deletions (call delete API for each)
+            pendingDeletions.forEach((sectionId) => {
+                allPromises.push(
+                    deleteSection({ userId, id: sectionId }).catch(err => {
+                        errors.push(`Failed to delete section ${sectionId}`);
+                        return { error: err };
+                    })
+                );
+            });
 
-            // Check for errors
-            const errors = results.filter(r => r.error);
+            // Wait for all operations
+            await Promise.all(allPromises);
+
             if (errors.length > 0) {
-                console.error("Some sections failed to save:", errors);
-                return { success: false, error: "Some sections failed to save" };
+                console.error("Some operations failed:", errors);
+                return { success: false, error: errors.join(", ") };
             }
 
-            // Clear pending changes on success
+            // Clear pending changes and deletions on success
             setPendingChanges(new Map());
+            
+            // Remove deleted sections from local state
+            if (pendingDeletions.size > 0) {
+                setSectionsState(prev => prev.filter(s => s.id && !pendingDeletions.has(s.id)));
+            }
+            setPendingDeletions(new Set());
+
             return { success: true };
 
         } catch (error) {
@@ -194,7 +239,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsSaving(false);
         }
-    }, [pendingChanges, sections]);
+    }, [pendingChanges, pendingDeletions, sections]);
 
     // Context value
     const value: EditorContextState = {
@@ -207,7 +252,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         updateSectionConfig,
         getSectionConfig,
         pendingChanges,
-        hasPendingChanges: pendingChanges.size > 0,
+        pendingDeletions,
+        markSectionForDeletion,
+        restoreSection,
+        hasPendingChanges: pendingChanges.size > 0 || pendingDeletions.size > 0,
         saveAllChanges,
         isSaving,
     };

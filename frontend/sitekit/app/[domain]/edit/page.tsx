@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAllSites, getPagesBySite, getSections, getUserFromToken } from "@/api";
+import { getAllSites, getPagesBySite, getSections, getUserFromToken, addSection, deleteSection } from "@/api";
 import { SectionRenderer } from "@/components/renderer/SectionRenderer";
-import { EditorProvider, useEditor } from "@/components/editor";
-import type { SiteDTO, PageDTO, PageSectionDTO } from "@/api";
+import { EditorProvider, useEditor, SectionWrapper, AddSectionButton, SectionPicker } from "@/components/editor";
+import type { SiteDTO, PageDTO, PageSectionDTO, SectionType } from "@/api";
 
 // Inner component that uses editor context
 function EditorContent({ 
@@ -26,7 +26,9 @@ function EditorContent({
         setSections, 
         hasPendingChanges, 
         saveAllChanges,
-        isSaving 
+        isSaving,
+        pendingDeletions,
+        markSectionForDeletion
     } = useEditor();
     
     const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -52,8 +54,60 @@ function EditorContent({
         setTimeout(() => setSaveMessage(null), 3000);
     };
 
-    // Sort sections by position
-    const sortedSections = [...sections].sort((a, b) => (a.position || 0) - (b.position || 0));
+    // Handle cancel - discard all pending changes
+    const handleCancel = () => {
+        setSections(initialSections);
+        setSaveMessage({ type: "success", text: "Changes discarded" });
+        setTimeout(() => setSaveMessage(null), 2000);
+    };
+
+    // Section picker state
+    const [showSectionPicker, setShowSectionPicker] = useState(false);
+    const [insertPosition, setInsertPosition] = useState<number>(0);
+
+    // Handle add section
+    const handleAddSection = async (sectionType: SectionType, variant: string) => {
+        if (!currentPage?.id) return;
+        
+        try {
+            const result = await addSection({
+                userId: userId,
+                pageId: currentPage.id,
+                sectionType: sectionType,
+                variant: variant,
+                config: {}, // Default empty config
+            });
+
+            if (result.data) {
+                // Reload sections to get the new one
+                const sectionsRes = await getSections({ userId, pageId: currentPage.id });
+                if (sectionsRes.data) {
+                    setSections(sectionsRes.data);
+                }
+                setSaveMessage({ type: "success", text: "Section added!" });
+                setTimeout(() => setSaveMessage(null), 2000);
+            } else {
+                setSaveMessage({ type: "error", text: result.error || "Failed to add section" });
+                setTimeout(() => setSaveMessage(null), 3000);
+            }
+        } catch (error) {
+            console.error("Failed to add section:", error);
+            setSaveMessage({ type: "error", text: "Failed to add section" });
+            setTimeout(() => setSaveMessage(null), 3000);
+        }
+    };
+
+    // Handle delete section - SOFT DELETE (just mark for deletion, don't call API yet)
+    const handleDeleteSection = (sectionId: number) => {
+        markSectionForDeletion(sectionId);
+        setSaveMessage({ type: "success", text: "Section marked for deletion. Click Save to confirm." });
+        setTimeout(() => setSaveMessage(null), 3000);
+    };
+
+    // Sort sections by position and filter out pending deletions
+    const sortedSections = [...sections]
+        .filter(s => s.id && !pendingDeletions.has(s.id))
+        .sort((a, b) => (a.position || 0) - (b.position || 0));
 
     return (
         <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col font-sans">
@@ -75,6 +129,20 @@ function EditorContent({
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* Exit Edit Mode Button - only show when in edit mode */}
+                    {isEditMode && (
+                        <button 
+                            onClick={() => setEditMode(false)}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 hover:text-white transition-all"
+                            title="Exit Edit Mode"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                            Exit
+                        </button>
+                    )}
+
                     {/* Edit Mode Toggle */}
                     <button 
                         onClick={() => setEditMode(!isEditMode)}
@@ -125,13 +193,24 @@ function EditorContent({
                         </button>
                     </div>
 
-                    {/* Save Button */}
+                    {/* Cancel Button - only show when there are pending changes */}
+                    {hasPendingChanges && (
+                        <button 
+                            onClick={handleCancel}
+                            disabled={isSaving}
+                            className="px-3 py-1.5 rounded text-sm font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 hover:text-white transition-colors cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                    )}
+
+                    {/* Save Button - Always enabled in edit mode */}
                     <button 
                         onClick={handleSave}
-                        disabled={isSaving || !hasPendingChanges}
-                        className={`px-4 py-1.5 rounded text-sm font-semibold transition-colors ${
-                            hasPendingChanges 
-                                ? "bg-blue-600 hover:bg-blue-500 text-white" 
+                        disabled={isSaving || !isEditMode}
+                        className={`px-4 py-1.5 rounded text-sm font-semibold transition-all ${
+                            isEditMode 
+                                ? "bg-blue-600 hover:bg-blue-500 text-white cursor-pointer hover:shadow-lg active:scale-95" 
                                 : "bg-slate-700 text-slate-400 cursor-not-allowed"
                         }`}
                     >
@@ -162,21 +241,55 @@ function EditorContent({
             {/* Canvas Area */}
             <main className="flex-1 bg-slate-100 dark:bg-slate-900 overflow-y-auto relative">
                 <div className="min-h-full bg-white dark:bg-black shadow-2xl mx-auto transition-all duration-300 w-full" style={{ maxWidth: '100%' }}>
+                    {/* Add Section at top */}
+                    {isEditMode && sortedSections.length > 0 && (
+                        <AddSectionButton onClick={() => setShowSectionPicker(true)} />
+                    )}
+
                     {/* Render Sections */}
                     {sortedSections.length > 0 ? (
-                        sortedSections.map((section) => (
-                            <SectionRenderer key={section.id} section={section} />
+                        sortedSections.map((section, index) => (
+                            <React.Fragment key={section.id}>
+                                <SectionWrapper
+                                    section={section}
+                                    onDelete={handleDeleteSection}
+                                    isFirst={index === 0}
+                                    isLast={index === sortedSections.length - 1}
+                                >
+                                    <SectionRenderer section={section} />
+                                </SectionWrapper>
+                                {/* Add Section button between sections */}
+                                {isEditMode && index < sortedSections.length - 1 && (
+                                    <AddSectionButton onClick={() => setShowSectionPicker(true)} />
+                                )}
+                            </React.Fragment>
                         ))
                     ) : (
                         <div className="py-40 flex flex-col items-center justify-center text-slate-400">
                             <p>Empty Page</p>
-                            <button className="mt-4 px-4 py-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-500 transition-colors">
+                            <button 
+                                onClick={() => setShowSectionPicker(true)}
+                                className="mt-4 px-4 py-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-500 transition-colors"
+                            >
                                 + Add Section
                             </button>
                         </div>
                     )}
+
+                    {/* Add Section at bottom */}
+                    {isEditMode && sortedSections.length > 0 && (
+                        <AddSectionButton onClick={() => setShowSectionPicker(true)} />
+                    )}
                 </div>
             </main>
+
+            {/* Section Picker Modal */}
+            {showSectionPicker && (
+                <SectionPicker 
+                    onSelect={handleAddSection} 
+                    onClose={() => setShowSectionPicker(false)} 
+                />
+            )}
         </div>
     );
 }
