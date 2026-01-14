@@ -124,7 +124,8 @@ function EditorContent({
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                     </button>
                     <div className="h-6 w-px bg-white/20"></div>
-                    <div>
+                    {/* Hide site name on mobile when in edit mode to reduce clutter */}
+                    <div className={isEditMode ? "hidden md:block" : ""}>
                         <h1 className="font-semibold text-sm">{site?.name}</h1>
                         <p className="text-xs text-slate-400">Home</p> 
                     </div>
