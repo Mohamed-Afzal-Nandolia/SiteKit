@@ -198,19 +198,21 @@ export default function TemplatePreviewPage() {
                 <div className="flex items-center gap-4">
                      <button 
                         onClick={() => router.back()}
-                        className="opacity-70 hover:opacity-100 transition-opacity"
+                        className="opacity-70 hover:opacity-100 transition-opacity flex items-center gap-1"
                     >
-                        &larr; Back to Templates
+                        <span>&larr;</span> <span className="hidden sm:inline">Back to Templates</span>
+                        <span className="sm:hidden">Back</span>
                     </button>
-                    <div className="h-4 w-px bg-white/20"></div>
-                    <span className="font-medium">Preview: {template.name}</span>
+                    <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
+                    <span className="font-medium hidden sm:block">Preview: {template.name}</span>
                 </div>
                 
                 <button 
                     onClick={() => setShowNameModal(true)}
-                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold transition-colors shadow-lg hover:shadow-blue-500/25"
+                    className="px-3 sm:px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold transition-colors shadow-lg hover:shadow-blue-500/25 whitespace-nowrap"
                 >
-                    Use This Template
+                    Use <span className="hidden sm:inline">This Template</span>
+                    <span className="sm:hidden">Template</span>
                 </button>
             </div>
 
