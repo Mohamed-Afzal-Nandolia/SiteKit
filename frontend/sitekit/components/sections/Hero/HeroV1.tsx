@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import React from "react";
+import { EditableText, EditableLink, useEditor } from "@/components/editor";
 
 export interface HeroV1Config {
     headline?: string;
@@ -10,7 +13,14 @@ export interface HeroV1Config {
     backgroundImage?: string; // URL
 }
 
-export function HeroV1({ config }: { config: HeroV1Config }) {
+interface HeroV1Props {
+    config: HeroV1Config;
+    onConfigChange?: (newConfig: HeroV1Config) => void;
+}
+
+export function HeroV1({ config, onConfigChange }: HeroV1Props) {
+    const { isEditMode } = useEditor();
+    
     const {
         headline = "Build your dream website",
         subheadline = "The fastest way to create stunning websites without writing code.",
@@ -19,6 +29,22 @@ export function HeroV1({ config }: { config: HeroV1Config }) {
         alignment = "center",
         backgroundImage
     } = config || {};
+
+    // Helper to update config
+    const updateConfig = (updates: Partial<HeroV1Config>) => {
+        if (onConfigChange) {
+            onConfigChange({ ...config, ...updates });
+        }
+    };
+
+    // Update CTA buttons
+    const updatePrimaryCta = (newLabel: string, newHref: string) => {
+        updateConfig({ primaryCta: { label: newLabel, href: newHref } });
+    };
+
+    const updateSecondaryCta = (newLabel: string, newHref: string) => {
+        updateConfig({ secondaryCta: { label: newLabel, href: newHref } });
+    };
 
     const alignClass = alignment === "center" ? "text-center items-center" : "text-left items-start";
 
@@ -37,30 +63,57 @@ export function HeroV1({ config }: { config: HeroV1Config }) {
             </div>
 
             <div className={`relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col ${alignClass}`}>
-                <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight text-balance mb-6">
-                    {headline}
-                </h1>
+                <EditableText
+                    value={headline}
+                    onUpdate={(newValue) => updateConfig({ headline: newValue })}
+                    as="h1"
+                    className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight text-balance mb-6"
+                    placeholder="Enter headline..."
+                />
                 
-                <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 text-balance">
-                    {subheadline}
-                </p>
+                <EditableText
+                    value={subheadline}
+                    onUpdate={(newValue) => updateConfig({ subheadline: newValue })}
+                    as="p"
+                    className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 text-balance"
+                    placeholder="Enter subheadline..."
+                    multiline
+                />
 
                 <div className="flex flex-wrap gap-4">
                     {primaryCta && (
-                        <Link
-                            href={primaryCta.href}
-                            className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5"
-                        >
-                            {primaryCta.label}
-                        </Link>
+                        isEditMode ? (
+                            <EditableLink
+                                label={primaryCta.label}
+                                href={primaryCta.href}
+                                onUpdate={updatePrimaryCta}
+                                className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5"
+                            />
+                        ) : (
+                            <Link
+                                href={primaryCta.href}
+                                className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5"
+                            >
+                                {primaryCta.label}
+                            </Link>
+                        )
                     )}
                     {secondaryCta && (
-                        <Link
-                            href={secondaryCta.href}
-                            className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
-                        >
-                            {secondaryCta.label}
-                        </Link>
+                        isEditMode ? (
+                            <EditableLink
+                                label={secondaryCta.label}
+                                href={secondaryCta.href}
+                                onUpdate={updateSecondaryCta}
+                                className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                            />
+                        ) : (
+                            <Link
+                                href={secondaryCta.href}
+                                className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                            >
+                                {secondaryCta.label}
+                            </Link>
+                        )
                     )}
                 </div>
             </div>

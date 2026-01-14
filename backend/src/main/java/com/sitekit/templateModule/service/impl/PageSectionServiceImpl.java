@@ -80,6 +80,8 @@ public class PageSectionServiceImpl implements PageSectionService {
         pageSection.setSectionType(dto.getSectionType());
         pageSection.setVariant(dto.getVariant());
         pageSection.setPosition(dto.getPosition());
+        pageSection.setConfigJson(dto.getConfig().toString());
+        sectionRepository.save(pageSection);
 
         return Map.of("message", "Section updated successfully");
     }

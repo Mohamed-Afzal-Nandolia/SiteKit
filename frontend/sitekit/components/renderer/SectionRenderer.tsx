@@ -1,5 +1,6 @@
 import React from "react";
 import type { PageSectionDTO } from "@/api";
+import { useEditor } from "../editor";
 
 // Import Variants
 import { HeaderV1 } from "../sections/Header/HeaderV1";
@@ -9,7 +10,7 @@ import { CtaV1 } from "../sections/CTA/CtaV1";
 import { FooterV1 } from "../sections/Footer/FooterV1";
 
 // Registry Type
-type ComponentRegistry = Record<string, Record<string, React.FC<{ config: any }>>>;
+type ComponentRegistry = Record<string, Record<string, React.FC<{ config: any; onConfigChange?: (newConfig: any) => void }>>>;
 
 // Registry Mapping
 const SECTION_REGISTRY: ComponentRegistry = {
@@ -37,6 +38,7 @@ const SECTION_REGISTRY: ComponentRegistry = {
 
 export function SectionRenderer({ section }: { section: PageSectionDTO }) {
     const { sectionType, variant, config, configJson } = section;
+    const { isEditMode, updateSectionConfig, getSectionConfig } = useEditor();
 
     if (!sectionType) return null;
 
@@ -54,26 +56,39 @@ export function SectionRenderer({ section }: { section: PageSectionDTO }) {
         return null;
     }
 
-    // Parse config
-    // Priority: configJson (API) -> config (if already object) -> config (if string)
+    // Get config (with any pending changes from context)
+    const sectionId = section.id;
     let parsedConfig: any = {};
     
-    if (configJson) {
-        try {
-            parsedConfig = JSON.parse(configJson);
-        } catch (e) {
-            console.error("Failed to parse section configJson", e);
+    if (sectionId && isEditMode) {
+        // In edit mode, get config from context (includes pending changes)
+        parsedConfig = getSectionConfig(sectionId) || {};
+    } else {
+        // Not in edit mode or no section id, parse from props
+        if (configJson) {
+            try {
+                parsedConfig = JSON.parse(configJson);
+            } catch (e) {
+                console.error("Failed to parse section configJson", e);
+            }
+        } else if (typeof config === "string") {
+            try {
+                parsedConfig = JSON.parse(config);
+            } catch (e) {
+                console.error("Failed to parse section config string", e);
+                parsedConfig = {};
+            }
+        } else if (config) {
+            parsedConfig = config;
         }
-    } else if (typeof config === "string") {
-        try {
-            parsedConfig = JSON.parse(config);
-        } catch (e) {
-            console.error("Failed to parse section config string", e);
-            parsedConfig = {};
-        }
-    } else if (config) {
-        parsedConfig = config;
     }
 
-    return <Component config={parsedConfig} />;
+    // Handle config changes from editable components
+    const handleConfigChange = (newConfig: any) => {
+        if (sectionId) {
+            updateSectionConfig(sectionId, newConfig);
+        }
+    };
+
+    return <Component config={parsedConfig} onConfigChange={handleConfigChange} />;
 }

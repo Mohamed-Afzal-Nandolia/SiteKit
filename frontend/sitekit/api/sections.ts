@@ -63,3 +63,16 @@ export async function reorderSections(
         body: JSON.stringify(request),
     });
 }
+
+/**
+ * Update a section's config or other properties
+ * @param request - PageSectionDTO with id, userId, and updated fields
+ */
+export async function updateSection(
+    request: PageSectionDTO
+): Promise<ApiResponse<ApiSuccessMessage>> {
+    return apiRequest<ApiSuccessMessage>(SECTION_ENDPOINTS.UPDATE_SECTION, {
+        method: "PATCH",
+        body: JSON.stringify(request),
+    });
+}

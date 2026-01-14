@@ -91,6 +91,7 @@ export {
     getSections,
     deleteSection,
     reorderSections,
+    updateSection,
 } from "./sections";
 
 // Template API Service
