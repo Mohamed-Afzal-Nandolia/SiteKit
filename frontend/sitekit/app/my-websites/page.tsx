@@ -50,6 +50,30 @@ export default function MyWebsitesPage() {
     const [isRenaming, setIsRenaming] = useState(false);
     const [renameError, setRenameError] = useState<string | null>(null);
 
+    // Helper to slugify domain - Updated to allow dots for TLDs
+    const slugify = (text: string) => {
+        return text
+            .toString()
+            .toLowerCase()
+            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/[^\w\-\.]+/g, '') // Remove all non-word chars (except . and -)
+            .replace(/\-\-+/g, '-')   // Replace multiple - with single -
+            .replace(/^-+/, '')       // Trim - from start
+            .replace(/-+$/, '');      // Trim - from end
+    };
+
+    // Domain validation regex
+    const isValidDomain = (domain: string) => {
+        if (!domain) return false;
+        // Regex to match backend validation:
+        // 1. Total length 1-253 chars
+        // 2. Cannot start with hyphen
+        // 3. Labels (parts) must start with alphanumeric, can contain hyphens, end with alphanumeric
+        // 4. Must have TLD (2-63 chars)
+        const domainRegex = /^(?=.{1,253}$)(?!-)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+        return domainRegex.test(domain);
+    };
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -121,10 +145,18 @@ export default function MyWebsitesPage() {
         setCreateError(null);
 
         try {
+            const formattedDomain = slugify(newSiteDomain.trim());
+            
+            if (!isValidDomain(formattedDomain)) {
+                setCreateError("Invalid domain format. Example: mysite.com");
+                setIsCreating(false);
+                return;
+            }
+
             const response = await createSite({
                 user: { id: user.userId },
                 name: newSiteName.trim(),
-                domain: newSiteDomain.trim(),
+                domain: formattedDomain,
             });
 
             if (response.data) {
@@ -175,11 +207,19 @@ export default function MyWebsitesPage() {
         setRenameError(null);
 
         try {
+            const formattedDomain = slugify(renameDomain.trim());
+            
+            if (!isValidDomain(formattedDomain)) {
+                setRenameError("Invalid domain format. Example: mysite.com");
+                setIsRenaming(false);
+                return;
+            }
+
             const response = await updateSite({
                 user: { id: user.userId },
                 id: siteToRename.id,
                 name: renameName.trim(),
-                domain: renameDomain.trim(),
+                domain: formattedDomain,
             });
 
             if (response.data) {
@@ -419,7 +459,7 @@ export default function MyWebsitesPage() {
                                         {filteredSites.map((site, index) => (
                                             <tr 
                                                 key={site.id} 
-                                                onClick={() => router.push(`/${site.id}/edit`)}
+                                                onClick={() => router.push(`/${site.domain || site.id}/edit`)} // Fallback to ID if domain missing, but ideally domain should be there
                                                 className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                                             >
                                                 <td className="px-6 py-4">
@@ -517,7 +557,7 @@ export default function MyWebsitesPage() {
                                 {filteredSites.map((site, index) => (
                                     <div 
                                         key={site.id}
-                                        onClick={() => router.push(`/${site.id}/edit`)}
+                                        onClick={() => router.push(`/${site.domain || site.id}/edit`)}
                                         className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                                     >
                                         <div className="flex items-start justify-between gap-3">

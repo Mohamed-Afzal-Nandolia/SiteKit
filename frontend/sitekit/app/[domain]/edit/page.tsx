@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getSiteById, getPagesBySite, getSections, getUserFromToken } from "@/api";
+import { getSiteById, getAllSites, getPagesBySite, getSections, getUserFromToken } from "@/api";
 import { SectionRenderer } from "@/components/renderer/SectionRenderer";
 import type { SiteDTO, PageDTO, PageSectionDTO } from "@/api";
 
 export default function EditorPage() {
     const params = useParams();
     const router = useRouter();
-    const siteId = Number(params.siteId);
+    const domain = decodeURIComponent(params.domain as string);
     
     // State
     const [site, setSite] = useState<SiteDTO | null>(null);
@@ -27,15 +27,21 @@ export default function EditorPage() {
                     return;
                 }
 
-                // 1. Fetch Site Info
-                const siteRes = await getSiteById({ id: siteId, user: { id: user.userId } });
-                if (siteRes.error || !siteRes.data) {
-                    throw new Error(siteRes.error || "Failed to load site");
+                // 1. Fetch All Sites to find by domain
+                const allSitesRes = await getAllSites({ user: { id: user.userId } });
+                if (allSitesRes.error || !allSitesRes.data) {
+                    throw new Error(allSitesRes.error || "Failed to load sites");
                 }
-                setSite(siteRes.data);
+
+                const foundSite = allSitesRes.data.find(s => s.domain === domain);
+                if (!foundSite || !foundSite.id) {
+                    throw new Error("Site not found");
+                }
+                
+                setSite(foundSite);
 
                 // 2. Fetch Pages (to find Home)
-                const pagesRes = await getPagesBySite({ site: { id: siteId, user: { id: user.userId } } });
+                const pagesRes = await getPagesBySite({ site: { id: foundSite.id, user: { id: user.userId } } });
                 if (pagesRes.data && pagesRes.data.length > 0) {
                     // Default to first page (usually Home)
                     const homePage = pagesRes.data[0];
@@ -58,10 +64,10 @@ export default function EditorPage() {
             }
         };
 
-        if (siteId) {
+        if (domain) {
             loadSiteData();
         }
-    }, [siteId, router]);
+    }, [domain, router]);
 
     if (isLoading) {
         return (

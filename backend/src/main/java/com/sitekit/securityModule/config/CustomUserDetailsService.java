@@ -3,7 +3,7 @@ package com.sitekit.securityModule.config;
 
 import com.sitekit.userManagementModule.entity.UserEntity;
 import com.sitekit.userManagementModule.repository.UserRepository;
-import com.sitekit.utilityModule.userUtils.UserUtils;
+import com.sitekit.utilityModule.UtilClass.UserUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

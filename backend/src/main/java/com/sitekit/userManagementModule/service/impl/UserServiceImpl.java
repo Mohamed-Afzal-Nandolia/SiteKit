@@ -8,7 +8,7 @@ import com.sitekit.userManagementModule.repository.UserRepository;
 import com.sitekit.userManagementModule.service.UserService;
 import com.sitekit.utilityModule.enums.Role;
 import com.sitekit.utilityModule.exceptions.ResourceNotFoundException;
-import com.sitekit.utilityModule.userUtils.UserUtils;
+import com.sitekit.utilityModule.UtilClass.UserUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

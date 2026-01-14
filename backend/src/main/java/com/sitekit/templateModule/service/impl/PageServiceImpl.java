@@ -8,14 +8,13 @@ import com.sitekit.templateModule.repository.SiteRepository;
 import com.sitekit.templateModule.service.PageService;
 import com.sitekit.utilityModule.enums.PageStatus;
 import com.sitekit.utilityModule.exceptions.ResourceAlreadyExists;
-import com.sitekit.utilityModule.userUtils.UserUtils;
+import com.sitekit.utilityModule.UtilClass.UserUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

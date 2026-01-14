@@ -51,6 +51,26 @@ export default function TemplatePreviewPage() {
         }
     }, [templateId]);
 
+    // Helper to slugify domain
+    const slugify = (text: string) => {
+        return text
+            .toString()
+            .toLowerCase()
+            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/[^\w\-\.]+/g, '') // Remove all non-word chars (except . and -)
+            .replace(/\-\-+/g, '-')   // Replace multiple - with single -
+            .replace(/^-+/, '')       // Trim - from start
+            .replace(/-+$/, '');      // Trim - from end
+    };
+    
+    // Domain validation regex
+    const isValidDomain = (domain: string) => {
+        if (!domain) return false;
+        // Regex to match backend validation
+        const domainRegex = /^(?=.{1,253}$)(?!-)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+        return domainRegex.test(domain);
+    };
+
     const handleUseTemplate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newSiteName.trim() || !template) return;
@@ -62,6 +82,12 @@ export default function TemplatePreviewPage() {
             return;
         }
 
+        const formattedDomain = slugify(newSiteName.trim());
+        
+        // Auto-append .com if no TLD acts as a fallback or you could force user input for domain separately
+        // For now, let's just ensure it has a TLD if validation fails, or blindly append '.com' if missing to pass validation
+        const finalDomain = isValidDomain(formattedDomain) ? formattedDomain : `${formattedDomain}.com`;
+
         setIsUsingTemplate(true);
         setCreationStatus("Creating site...");
 
@@ -70,7 +96,7 @@ export default function TemplatePreviewPage() {
             const siteRes = await createSite({
                 user: { id: user.userId },
                 name: newSiteName,
-                domain: newSiteName.toLowerCase().replace(/\s+/g, '-'), // Simple slug
+                domain: finalDomain,
             });
 
             let newSiteId: number | undefined;
@@ -141,7 +167,7 @@ export default function TemplatePreviewPage() {
             }
 
             setCreationStatus("Done! Redirecting...");
-            router.push(`/${newSiteId}/edit`);
+            router.push(`/${finalDomain}/edit`);
 
         } catch (err) {
             console.error(err);

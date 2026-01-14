@@ -1,4 +1,4 @@
-package com.sitekit.utilityModule.userUtils;
+package com.sitekit.utilityModule.UtilClass;
 
 import com.sitekit.userManagementModule.entity.UserEntity;
 import com.sitekit.userManagementModule.repository.UserRepository;

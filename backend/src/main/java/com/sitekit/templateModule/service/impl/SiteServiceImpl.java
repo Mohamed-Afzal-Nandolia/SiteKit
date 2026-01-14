@@ -5,10 +5,11 @@ import com.sitekit.templateModule.model.SiteDTO;
 import com.sitekit.templateModule.repository.SiteRepository;
 import com.sitekit.templateModule.service.SiteService;
 import com.sitekit.userManagementModule.entity.UserEntity;
+import com.sitekit.utilityModule.UtilClass.SiteUtils;
 import com.sitekit.utilityModule.enums.SiteStatus;
 import com.sitekit.utilityModule.exceptions.ResourceAlreadyExists;
 import com.sitekit.utilityModule.exceptions.ResourceNotFoundException;
-import com.sitekit.utilityModule.userUtils.UserUtils;
+import com.sitekit.utilityModule.UtilClass.UserUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -49,6 +50,9 @@ public class SiteServiceImpl implements SiteService {
     @Override
     public Map<String, String> createSite(SiteDTO siteDTO) {
         UserEntity user = userUtils.getUserById(siteDTO.getUser().getId());
+        if(!SiteUtils.isValidDomain(siteDTO.getDomain())){
+            throw new RuntimeException("Invalid Domain");
+        }
         SiteEntity siteEntity = modelMapper.map(siteDTO, SiteEntity.class);
         siteEntity.setSiteStatus(SiteStatus.DRAFT);
         siteEntity.setUser(user);
