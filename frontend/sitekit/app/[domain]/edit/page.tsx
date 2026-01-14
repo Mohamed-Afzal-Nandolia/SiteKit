@@ -28,7 +28,8 @@ function EditorContent({
         saveAllChanges,
         isSaving,
         pendingDeletions,
-        markSectionForDeletion
+        markSectionForDeletion,
+        moveSection
     } = useEditor();
     
     const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -42,9 +43,10 @@ function EditorContent({
     const user = getUserFromToken();
     const userId = user?.userId || 0;
 
-    // Handle save
+    // Handle save - pass both userId and pageId for reorder API
     const handleSave = async () => {
-        const result = await saveAllChanges(userId);
+        const pageId = currentPage?.id || 0;
+        const result = await saveAllChanges(userId, pageId);
         if (result.success) {
             setSaveMessage({ type: "success", text: "Changes saved!" });
         } else {
@@ -253,6 +255,8 @@ function EditorContent({
                                 <SectionWrapper
                                     section={section}
                                     onDelete={handleDeleteSection}
+                                    onMoveUp={() => section.id && moveSection(section.id, "up")}
+                                    onMoveDown={() => section.id && moveSection(section.id, "down")}
                                     isFirst={index === 0}
                                     isLast={index === sortedSections.length - 1}
                                 >

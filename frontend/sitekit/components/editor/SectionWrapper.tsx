@@ -7,8 +7,8 @@ import type { PageSectionDTO } from "@/api";
 interface SectionWrapperProps {
     section: PageSectionDTO;
     onDelete: (sectionId: number) => void;
-    onMoveUp?: () => void;
-    onMoveDown?: () => void;
+    onMoveUp: () => void;
+    onMoveDown: () => void;
     isFirst?: boolean;
     isLast?: boolean;
     children: React.ReactNode;
@@ -59,7 +59,7 @@ export function SectionWrapper({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {/* Section Controls - ALWAYS visible in edit mode, positioned at top right */}
+            {/* Section Controls - ALWAYS visible in edit mode */}
             <div 
                 className="absolute top-4 right-4 z-[100] flex items-center gap-1 bg-slate-900 shadow-lg rounded-lg p-1.5"
                 style={{ pointerEvents: 'auto' }}
@@ -70,7 +70,7 @@ export function SectionWrapper({
                 </span>
 
                 {/* Move Up */}
-                {!isFirst && onMoveUp && (
+                {!isFirst && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
                         className="p-1.5 hover:bg-white/10 rounded text-white/80 hover:text-white transition-colors"
@@ -83,7 +83,7 @@ export function SectionWrapper({
                 )}
 
                 {/* Move Down */}
-                {!isLast && onMoveDown && (
+                {!isLast && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
                         className="p-1.5 hover:bg-white/10 rounded text-white/80 hover:text-white transition-colors"

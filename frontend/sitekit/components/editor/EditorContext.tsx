@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import type { PageSectionDTO } from "@/api";
-import { updateSection, deleteSection } from "@/api";
+import { updateSection, deleteSection, reorderSections } from "@/api";
 
 // Editor Context State
 interface EditorContextState {
@@ -30,11 +30,15 @@ interface EditorContextState {
     markSectionForDeletion: (sectionId: number) => void;
     restoreSection: (sectionId: number) => void;
     
-    // Check if there are any pending changes (config updates or deletions)
+    // Reordering
+    moveSection: (sectionId: number, direction: "up" | "down") => void;
+    hasReorderChanges: boolean;
+    
+    // Check if there are any pending changes (config updates, deletions, or reorders)
     hasPendingChanges: boolean;
     
     // Save functionality
-    saveAllChanges: (userId: number) => Promise<{ success: boolean; error?: string }>;
+    saveAllChanges: (userId: number, pageId: number) => Promise<{ success: boolean; error?: string }>;
     isSaving: boolean;
 }
 
@@ -52,6 +56,8 @@ const defaultContextValue: EditorContextState = {
     pendingDeletions: new Set(),
     markSectionForDeletion: () => {},
     restoreSection: () => {},
+    moveSection: () => {},
+    hasReorderChanges: false,
     hasPendingChanges: false,
     saveAllChanges: async () => ({ success: false }),
     isSaving: false,
@@ -70,6 +76,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     
     // Sections data (local copy)
     const [sections, setSectionsState] = useState<PageSectionDTO[]>([]);
+    
+    // Original section order (to detect reorder changes)
+    const [originalOrder, setOriginalOrder] = useState<number[]>([]);
     
     // Pending changes map: sectionId -> updated config
     const [pendingChanges, setPendingChanges] = useState<Map<number, Record<string, unknown>>>(new Map());
@@ -99,6 +108,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     // Set sections (used when loading from API)
     const setSections = useCallback((newSections: PageSectionDTO[]) => {
         setSectionsState(newSections);
+        // Store original order for detecting reorder changes
+        setOriginalOrder(newSections.map(s => s.id!).filter(Boolean));
         // Clear pending changes and deletions when new sections are loaded
         setPendingChanges(new Map());
         setPendingDeletions(new Set());
@@ -121,6 +132,44 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             return updated;
         });
     }, []);
+
+    // Move a section up or down
+    const moveSection = useCallback((sectionId: number, direction: "up" | "down") => {
+        setSectionsState(prev => {
+            const sorted = [...prev].sort((a, b) => (a.position || 0) - (b.position || 0));
+            const currentIndex = sorted.findIndex(s => s.id === sectionId);
+            
+            if (currentIndex === -1) return prev;
+            
+            const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+            
+            if (targetIndex < 0 || targetIndex >= sorted.length) return prev;
+            
+            // Swap positions
+            const newSections = [...sorted];
+            [newSections[currentIndex], newSections[targetIndex]] = [newSections[targetIndex], newSections[currentIndex]];
+            
+            // Update position values
+            return newSections.map((section, index) => ({
+                ...section,
+                position: index,
+            }));
+        });
+    }, []);
+
+    // Check if order has changed from original
+    const hasReorderChanges = React.useMemo(() => {
+        const currentOrder = [...sections]
+            .filter(s => s.id && !pendingDeletions.has(s.id))
+            .sort((a, b) => (a.position || 0) - (b.position || 0))
+            .map(s => s.id!);
+        
+        const filteredOriginal = originalOrder.filter(id => !pendingDeletions.has(id));
+        
+        if (currentOrder.length !== filteredOriginal.length) return false;
+        
+        return !currentOrder.every((id, index) => id === filteredOriginal[index]);
+    }, [sections, originalOrder, pendingDeletions]);
 
     // Get section config (with pending changes applied)
     const getSectionConfig = useCallback((sectionId: number): Record<string, unknown> | null => {
@@ -170,15 +219,16 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         }));
     }, []);
 
-    // Save all pending changes (config updates AND deletions) to backend
-    const saveAllChanges = useCallback(async (userId: number): Promise<{ success: boolean; error?: string }> => {
+    // Save all pending changes to backend
+    // Order: Add sections → Update configs → Delete sections → Reorder (LAST)
+    const saveAllChanges = useCallback(async (userId: number, pageId: number): Promise<{ success: boolean; error?: string }> => {
         setIsSaving(true);
 
         try {
-            const allPromises: Promise<any>[] = [];
             const errors: string[] = [];
 
             // 1. Handle config updates (skip sections that are pending deletion)
+            const updatePromises: Promise<any>[] = [];
             pendingChanges.forEach((config, sectionId) => {
                 // Don't update config for sections that will be deleted
                 if (pendingDeletions.has(sectionId)) return;
@@ -186,7 +236,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 const section = sections.find(s => s.id === sectionId);
                 if (section) {
                     const configString = JSON.stringify(config);
-                    allPromises.push(
+                    updatePromises.push(
                         updateSection({
                             id: sectionId,
                             userId: userId,
@@ -204,9 +254,15 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 }
             });
 
+            // Wait for updates to complete
+            if (updatePromises.length > 0) {
+                await Promise.all(updatePromises);
+            }
+
             // 2. Handle deletions (call delete API for each)
+            const deletePromises: Promise<any>[] = [];
             pendingDeletions.forEach((sectionId) => {
-                allPromises.push(
+                deletePromises.push(
                     deleteSection({ userId, id: sectionId }).catch(err => {
                         errors.push(`Failed to delete section ${sectionId}`);
                         return { error: err };
@@ -214,8 +270,30 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 );
             });
 
-            // Wait for all operations
-            await Promise.all(allPromises);
+            // Wait for deletes to complete
+            if (deletePromises.length > 0) {
+                await Promise.all(deletePromises);
+            }
+
+            // 3. Handle reorder LAST (after all adds/updates/deletes)
+            if (hasReorderChanges) {
+                const orderedSectionIds = [...sections]
+                    .filter(s => s.id && !pendingDeletions.has(s.id))
+                    .sort((a, b) => (a.position || 0) - (b.position || 0))
+                    .map(s => s.id!);
+
+                if (orderedSectionIds.length > 0) {
+                    try {
+                        await reorderSections({
+                            userId,
+                            pageId,
+                            orderedSectionIds,
+                        });
+                    } catch (err) {
+                        errors.push("Failed to reorder sections");
+                    }
+                }
+            }
 
             if (errors.length > 0) {
                 console.error("Some operations failed:", errors);
@@ -225,10 +303,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             // Clear pending changes and deletions on success
             setPendingChanges(new Map());
             
-            // Remove deleted sections from local state
-            if (pendingDeletions.size > 0) {
-                setSectionsState(prev => prev.filter(s => s.id && !pendingDeletions.has(s.id)));
-            }
+            // Remove deleted sections from local state and update original order
+            const remainingSections = sections.filter(s => s.id && !pendingDeletions.has(s.id));
+            setSectionsState(remainingSections);
+            setOriginalOrder(remainingSections.sort((a, b) => (a.position || 0) - (b.position || 0)).map(s => s.id!));
             setPendingDeletions(new Set());
 
             return { success: true };
@@ -239,7 +317,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsSaving(false);
         }
-    }, [pendingChanges, pendingDeletions, sections]);
+    }, [pendingChanges, pendingDeletions, sections, hasReorderChanges]);
 
     // Context value
     const value: EditorContextState = {
@@ -255,7 +333,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         pendingDeletions,
         markSectionForDeletion,
         restoreSection,
-        hasPendingChanges: pendingChanges.size > 0 || pendingDeletions.size > 0,
+        moveSection,
+        hasReorderChanges,
+        hasPendingChanges: pendingChanges.size > 0 || pendingDeletions.size > 0 || hasReorderChanges,
         saveAllChanges,
         isSaving,
     };
