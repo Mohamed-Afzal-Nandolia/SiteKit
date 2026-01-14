@@ -9,6 +9,7 @@ import com.sitekit.templateModule.repository.PageRepository;
 import com.sitekit.templateModule.repository.PageSectionRepository;
 import com.sitekit.templateModule.service.PageSectionService;
 import com.sitekit.utilityModule.UtilClass.UserUtils;
+import com.sitekit.utilityModule.exceptions.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -66,6 +67,21 @@ public class PageSectionServiceImpl implements PageSectionService {
                 .stream()
                 .map(this::toDto)
                 .toList();
+    }
+
+    @Override
+    public Map<String, String> updateSection(PageSectionDTO dto) {
+        Long userId = dto.getUserId();
+        userUtil.getUserById(userId);
+
+        PageSectionEntity pageSection = sectionRepository.findById(dto.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+
+        pageSection.setSectionType(dto.getSectionType());
+        pageSection.setVariant(dto.getVariant());
+        pageSection.setPosition(dto.getPosition());
+
+        return Map.of("message", "Section updated successfully");
     }
 
     private PageSectionDTO toDto(PageSectionEntity entity) {

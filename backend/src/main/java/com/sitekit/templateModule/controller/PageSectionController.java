@@ -35,13 +35,10 @@ public class PageSectionController {
         return ResponseEntity.ok(sectionService.getSections(dto));
     }
 
-//    @PatchMapping("/{sectionId}")
-//    public ResponseEntity<PageSectionDTO> updateSection(
-//            @PathVariable Long sectionId,
-//            @RequestBody PageSectionDTO dto) {
-//
-//        return ResponseEntity.ok(sectionService.updateSection(sectionId, dto));
-//    }
+    @PatchMapping(APIEndpoints.UPDATE_SECTION)
+    public ResponseEntity<Map<String, String>> updateSection(@RequestBody PageSectionDTO dto) {
+        return ResponseEntity.ok(sectionService.updateSection(dto));
+    }
 
     @DeleteMapping(APIEndpoints.DELETE_SECTION)
     public ResponseEntity<Map<String, String>> deleteSection(@RequestBody PageSectionDTO dto) {
@@ -54,13 +51,5 @@ public class PageSectionController {
     }
 
 
-//    @PatchMapping("/reorder")
-//    public ResponseEntity<Void> reorderSections(
-//            @PathVariable Long pageId,
-//            @RequestBody List<Long> orderedSectionIds) {
-//
-//        sectionService.reorderSections(pageId, orderedSectionIds);
-//        return ResponseEntity.ok().build();
-//    }
 
 }
