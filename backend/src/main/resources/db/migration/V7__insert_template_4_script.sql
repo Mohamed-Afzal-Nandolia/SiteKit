@@ -1,0 +1,174 @@
+-- =========================================
+-- Vx__seed_grand_horizon_hotel_template.sql
+-- =========================================
+
+-- 1. Create Template
+INSERT INTO template_module_template (
+    name,
+    category,
+    thumbnail_url,
+    is_public,
+    created_by,
+    created_on,
+    last_update_on
+) VALUES (
+    'Grand Horizon Hotel Template',
+    'HOTEL',
+    'https://cdn.sitekit.dev/templates/grand-horizon.png',
+    TRUE,
+    1,
+    NOW(),
+    NOW()
+);
+
+-- Capture template ID
+SET @template_id = LAST_INSERT_ID();
+
+-- 2. HEADER
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'HEADER',
+    'header_v1',
+    0,
+    '{
+      "logoText":"Grand Horizon",
+      "navLinks":[
+        {"label":"Rooms","href":"#rooms"},
+        {"label":"Amenities","href":"#amenities"},
+        {"label":"Offers","href":"#offers"},
+        {"label":"Dining","href":"#dining"}
+      ],
+      "actionButton":{
+        "label":"Book Now",
+        "href":"#book",
+        "variant":"primary"
+      }
+    }'
+);
+
+-- 3. HERO (Main)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'HERO',
+    'hero_v1',
+    1,
+    '{
+      "headline":"Escape to Paradise",
+      "subheadline":"Experience world-class service, breathtaking ocean views, and the ultimate in relaxation at Grand Horizon Resort.",
+      "primaryCta":{"label":"Check Availability","href":"#book"},
+      "secondaryCta":{"label":"View Suites","href":"#rooms"},
+      "alignment":"center",
+      "backgroundImage":"https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2070&auto=format&fit=crop"
+    }'
+);
+
+-- 4. CONTENT (Accommodations)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'CONTENT',
+    'content_v1',
+    2,
+    '{
+      "title":"Accommodations",
+      "description":"Choose from our range of meticulously designed suites.",
+      "layout":"grid",
+      "features":[
+        {"title":"Ocean View Suite","description":"Wake up to the sound of waves. King Bed, Balcony, 450 sq ft."},
+        {"title":"Garden Villa","description":"Private sanctuary surrounded by tropical flora. Plunge pool included."},
+        {"title":"Presidential Penthouse","description":"The pinnacle of luxury. Top floor, panoramic views, private butler."},
+        {"title":"Family Cabana","description":"Two bedrooms, spacious living area, and direct beach access."}
+      ]
+    }'
+);
+
+-- 5. CONTENT (Amenities)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'CONTENT',
+    'content_v1',
+    3,
+    '{
+      "title":"World-Class Amenities",
+      "description":"Everything you need for a rejuvenating stay.",
+      "layout":"grid",
+      "features":[
+        {"title":"Infinity Pool","description":"Heated saltwater pool overlooking the bay."},
+        {"title":"Serenity Spa","description":"Full-service spa offering massages, facials, and hydrotherapy."},
+        {"title":"24/7 Fitness Center","description":"State-of-the-art equipment and daily yoga classes."},
+        {"title":"Concierge Service","description":"Expert local guides to arrange your tours and transport."}
+      ]
+    }'
+);
+
+-- 6. HERO (Offer)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'HERO',
+    'hero_v1',
+    4,
+    '{
+      "headline":"Winter Sun Special",
+      "subheadline":"Book 3 nights and get the 4th night free. Includes complimentary breakfast and airport transfer.",
+      "primaryCta":{"label":"Claim Offer","href":"#offers"},
+      "alignment":"left"
+    }'
+);
+
+-- 7. CTA
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'CTA',
+    'cta_v1',
+    5,
+    '{
+      "title":"Your Vacation Awaits",
+      "description":"Lowest rates guaranteed when you book directly through our website.",
+      "buttonText":"Find Your Room",
+      "buttonLink":"#book"
+    }'
+);
+
+-- 8. FOOTER
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'FOOTER',
+    'footer_v1',
+    6,
+    '{
+      "brandName":"Grand Horizon Hotels",
+      "description":"100 Coastal Highway, Malibu, CA 90265 | reservations@grandhorizon.com",
+      "copyrightText":"© 2024 Grand Horizon Resorts.",
+      "columns":[
+        {
+          "title":"Resort",
+          "links":[
+            {"label":"About Us","href":"#"},
+            {"label":"Careers","href":"#"},
+            {"label":"Press","href":"#"}
+          ]
+        },
+        {
+          "title":"Support",
+          "links":[
+            {"label":"Contact Us","href":"#"},
+            {"label":"FAQ","href":"#"},
+            {"label":"Accessibility","href":"#"}
+          ]
+        }
+      ]
+    }'
+);

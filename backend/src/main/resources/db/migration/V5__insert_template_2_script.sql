@@ -1,0 +1,173 @@
+-- =========================================
+-- Vx__seed_alexdev_portfolio_template.sql
+-- =========================================
+
+-- 1. Create Template
+INSERT INTO template_module_template (
+    name,
+    category,
+    thumbnail_url,
+    is_public,
+    created_by,
+    created_on,
+    last_update_on
+) VALUES (
+    'AlexDev Portfolio Template',
+    'PORTFOLIO',
+    'https://cdn.sitekit.dev/templates/alexdev-portfolio.png',
+    TRUE,
+    1,
+    NOW(),
+    NOW()
+);
+
+-- Capture template ID
+SET @template_id = LAST_INSERT_ID();
+
+-- 2. HEADER
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'HEADER',
+    'header_v1',
+    0,
+    '{
+      "logoText":"AlexDev",
+      "navLinks":[
+        {"label":"Work","href":"#projects"},
+        {"label":"Skills","href":"#skills"},
+        {"label":"About","href":"#about"},
+        {"label":"Contact","href":"#contact"}
+      ],
+      "actionButton":{
+        "label":"Resume",
+        "href":"/resume.pdf",
+        "variant":"outline"
+      }
+    }'
+);
+
+-- 3. HERO (Main)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'HERO',
+    'hero_v1',
+    1,
+    '{
+      "headline":"Turning Ideas into Digital Reality",
+      "subheadline":"I am a Full Stack Developer passionate about building accessible, pixel-perfect, and performant web experiences.",
+      "primaryCta":{"label":"View My Work","href":"#projects"},
+      "secondaryCta":{"label":"Contact Me","href":"#contact"},
+      "alignment":"left"
+    }'
+);
+
+-- 4. CONTENT (Technical Expertise)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'CONTENT',
+    'content_v1',
+    2,
+    '{
+      "title":"Technical Expertise",
+      "description":"My toolbelt for building modern applications.",
+      "layout":"grid",
+      "features":[
+        {"title":"Frontend","description":"React, Next.js, TailwindCSS, TypeScript"},
+        {"title":"Backend","description":"Node.js, Express, PostgreSQL, Redis"},
+        {"title":"DevOps","description":"Docker, AWS, CI/CD, Nginx"},
+        {"title":"Design","description":"Figma, Adobe XD, UI/UX Principles"},
+        {"title":"Mobile","description":"React Native, Expo, iOS, Android"},
+        {"title":"Testing","description":"Jest, Cypress, React Testing Library"}
+      ]
+    }'
+);
+
+-- 5. HERO (About Me)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'HERO',
+    'hero_v1',
+    3,
+    '{
+      "headline":"About Me",
+      "subheadline":"With over 5 years of experience in the software industry, I have had the privilege of working with startups and large enterprises. My approach to development is user-centric, focusing on speed and accessibility.",
+      "alignment":"center"
+    }'
+);
+
+-- 6. CONTENT (Featured Projects)
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'CONTENT',
+    'content_v1',
+    4,
+    '{
+      "title":"Featured Projects",
+      "description":"A selection of my recent work.",
+      "layout":"grid",
+      "features":[
+        {"title":"E-Commerce Platform","description":"A full-featured shopping platform built with Next.js and Stripe."},
+        {"title":"SaaS Dashboard","description":"Analytics dashboard handling millions of data points in real-time."},
+        {"title":"Portfolio Builder","description":"The very tool you are using right now! A dynamic website builder."},
+        {"title":"Chat Application","description":"Real-time messaging app using WebSockets and Redis."}
+      ]
+    }'
+);
+
+-- 7. CTA
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'CTA',
+    'cta_v1',
+    5,
+    '{
+      "title":"Interested in working together?",
+      "description":"I am always open to discussing product design work or partnership opportunities.",
+      "buttonText":"Start a Conversation",
+      "buttonLink":"mailto:alex@example.com"
+    }'
+);
+
+-- 8. FOOTER
+INSERT INTO template_module_template_section (
+    template_id, section_type, variant, position, config_json
+) VALUES (
+    @template_id,
+    'FOOTER',
+    'footer_v1',
+    6,
+    '{
+      "brandName":"AlexDev",
+      "description":"Building the future, one line of code at a time.",
+      "copyrightText":"© 2024 AlexDev. All System Rights Reserved.",
+      "columns":[
+        {
+          "title":"Socials",
+          "links":[
+            {"label":"Twitter","href":"https://twitter.com"},
+            {"label":"GitHub","href":"https://github.com"},
+            {"label":"LinkedIn","href":"https://linkedin.com"}
+          ]
+        },
+        {
+          "title":"Resources",
+          "links":[
+            {"label":"Blog","href":"/blog"},
+            {"label":"Newsletter","href":"/newsletter"}
+          ]
+        }
+      ]
+    }'
+);
