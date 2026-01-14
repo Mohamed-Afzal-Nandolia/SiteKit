@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getAllSites, getPagesBySite, getSections, getUserFromToken, addSection, deleteSection } from "@/api";
 import { SectionRenderer } from "@/components/renderer/SectionRenderer";
-import { EditorProvider, useEditor, SectionWrapper, AddSectionButton, SectionPicker } from "@/components/editor";
+import { EditorProvider, useEditor, SectionWrapper, AddSectionButton, SectionPicker, SortableSectionList } from "@/components/editor";
 import type { SiteDTO, PageDTO, PageSectionDTO, SectionType } from "@/api";
 
 // Inner component that uses editor context
@@ -104,6 +104,15 @@ function EditorContent({
         markSectionForDeletion(sectionId);
         setSaveMessage({ type: "success", text: "Section marked for deletion. Click Save to confirm." });
         setTimeout(() => setSaveMessage(null), 3000);
+    };
+
+    // Handle drag-and-drop reorder
+    const handleDragReorder = (newSections: PageSectionDTO[]) => {
+        // Update sections with new positions
+        setSections(newSections.map((section, index) => ({
+            ...section,
+            position: index,
+        })));
     };
 
     // Sort sections by position and filter out pending deletions
@@ -249,26 +258,28 @@ function EditorContent({
                         <AddSectionButton onClick={() => setShowSectionPicker(true)} />
                     )}
 
-                    {/* Render Sections */}
+                    {/* Render Sections with Drag-and-Drop */}
                     {sortedSections.length > 0 ? (
-                        sortedSections.map((section, index) => (
-                            <React.Fragment key={section.id}>
-                                <SectionWrapper
-                                    section={section}
-                                    onDelete={handleDeleteSection}
-                                    onMoveUp={() => section.id && moveSection(section.id, "up")}
-                                    onMoveDown={() => section.id && moveSection(section.id, "down")}
-                                    isFirst={index === 0}
-                                    isLast={index === sortedSections.length - 1}
-                                >
-                                    <SectionRenderer section={section} />
-                                </SectionWrapper>
-                                {/* Add Section button between sections */}
-                                {isEditMode && index < sortedSections.length - 1 && (
-                                    <AddSectionButton onClick={() => setShowSectionPicker(true)} />
-                                )}
-                            </React.Fragment>
-                        ))
+                        <SortableSectionList sections={sortedSections} onReorder={handleDragReorder}>
+                            {(section, index) => (
+                                <React.Fragment key={section.id}>
+                                    <SectionWrapper
+                                        section={section}
+                                        onDelete={handleDeleteSection}
+                                        onMoveUp={() => section.id && moveSection(section.id, "up")}
+                                        onMoveDown={() => section.id && moveSection(section.id, "down")}
+                                        isFirst={index === 0}
+                                        isLast={index === sortedSections.length - 1}
+                                    >
+                                        <SectionRenderer section={section} />
+                                    </SectionWrapper>
+                                    {/* Add Section button between sections */}
+                                    {isEditMode && index < sortedSections.length - 1 && (
+                                        <AddSectionButton onClick={() => setShowSectionPicker(true)} />
+                                    )}
+                                </React.Fragment>
+                            )}
+                        </SortableSectionList>
                     ) : (
                         <div className="py-40 flex flex-col items-center justify-center text-slate-400">
                             <p>Empty Page</p>
