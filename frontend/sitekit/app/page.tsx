@@ -12,14 +12,6 @@ export default function Home() {
   const [showPage, setShowPage] = useState(false);
 
   useEffect(() => {
-    // Initialize theme
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
 
     // Check if user is authenticated
     if (isAuthenticated()) {

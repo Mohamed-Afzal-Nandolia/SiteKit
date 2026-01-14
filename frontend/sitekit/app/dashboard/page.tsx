@@ -15,15 +15,6 @@ export default function DashboardPage() {
         // Mark as client-side rendered
         setIsClient(true);
         
-        // Initialize theme from localStorage
-        const savedTheme = localStorage.getItem("theme");
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-        }
-        
         // Check authentication with refresh attempt
         const checkAuth = async () => {
             let authenticated = isAuthenticated();

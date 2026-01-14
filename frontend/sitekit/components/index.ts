@@ -3,6 +3,9 @@ export { Button } from "./ui/Button";
 export { Input } from "./ui/Input";
 export { ThemeToggle } from "./ui/ThemeToggle";
 
+// Providers
+export { ThemeProvider, useTheme } from "./providers/ThemeProvider";
+
 // Auth Components
 export { LoginForm } from "./auth/LoginForm";
 export { LogoutButton } from "./auth/LogoutButton";
