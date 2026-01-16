@@ -73,7 +73,8 @@ export {
     getSiteById,
     deleteSite,
     updateSiteStatus,
-    renameSite,
+    updateSiteName,
+    updateSiteDomain,
     updateSite,
 } from "./sites";
 

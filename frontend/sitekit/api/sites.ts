@@ -79,10 +79,10 @@ export async function updateSiteStatus(
 }
 
 /**
- * Rename a site
+ * Update site name only
  * @param request - Request with user ID, site ID, and new name
  */
-export async function renameSite(
+export async function updateSiteName(
     request: { user: { id: number }; id: number; name: string }
 ): Promise<ApiResponse<ApiSuccessMessage>> {
     return apiRequest<ApiSuccessMessage>(SITE_ENDPOINTS.UPDATE_SITE_NAME, {
@@ -92,14 +92,57 @@ export async function renameSite(
 }
 
 /**
- * Update site details (name and domain)
- * @param request - Request with user ID, site ID, name, and domain
+ * Update site domain only
+ * @param request - Request with user ID, site ID, and new domain
  */
-export async function updateSite(
-    request: { user: { id: number }; id: number; name: string; domain: string }
+export async function updateSiteDomain(
+    request: { user: { id: number }; id: number; domain: string }
 ): Promise<ApiResponse<ApiSuccessMessage>> {
-    return apiRequest<ApiSuccessMessage>(SITE_ENDPOINTS.UPDATE_SITE_NAME, {
+    return apiRequest<ApiSuccessMessage>(SITE_ENDPOINTS.UPDATE_SITE_DOMAIN, {
         method: "PATCH",
         body: JSON.stringify(request),
     });
+}
+
+/**
+ * Update site details (name and/or domain)
+ * Intelligently calls the appropriate API(s) based on what changed
+ * @param request - Request with user ID, site ID, new name, new domain, and original values
+ */
+export async function updateSite(
+    request: {
+        user: { id: number };
+        id: number;
+        name: string;
+        domain: string;
+        originalName: string;
+        originalDomain: string;
+    }
+): Promise<ApiResponse<ApiSuccessMessage>> {
+    const { user, id, name, domain, originalName, originalDomain } = request;
+
+    const nameChanged = name !== originalName;
+    const domainChanged = domain !== originalDomain;
+
+    // If only name changed, call update name API
+    if (nameChanged && !domainChanged) {
+        return updateSiteName({ user, id, name });
+    }
+
+    // If only domain changed, call update domain API
+    if (!nameChanged && domainChanged) {
+        return updateSiteDomain({ user, id, domain });
+    }
+
+    // If both changed, call name first, then domain
+    if (nameChanged && domainChanged) {
+        const nameResult = await updateSiteName({ user, id, name });
+        if (nameResult.error) {
+            return nameResult;
+        }
+        return updateSiteDomain({ user, id, domain });
+    }
+
+    // Nothing changed
+    return { data: { success: "No changes made" }, status: 200 };
 }

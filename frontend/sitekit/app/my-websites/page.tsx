@@ -220,6 +220,8 @@ export default function MyWebsitesPage() {
                 id: siteToRename.id,
                 name: renameName.trim(),
                 domain: formattedDomain,
+                originalName: siteToRename.name || "",
+                originalDomain: siteToRename.domain || "",
             });
 
             if (response.data) {

@@ -24,6 +24,7 @@ export const SITE_ENDPOINTS = {
     GET_SITE_BY_ID: `${API_V1}/get-site`,
     UPDATE_SITE_STATUS: `${API_V1}/update-site-status`,
     UPDATE_SITE_NAME: `${API_V1}/update-site-name`,
+    UPDATE_SITE_DOMAIN: `${API_V1}/update-site-domain`,
 } as const;
 
 // Template Endpoints
