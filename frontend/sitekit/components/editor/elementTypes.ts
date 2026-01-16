@@ -12,6 +12,7 @@ export interface SectionElement {
     // Content
     content: string;
     href?: string;  // For buttons
+    newTab?: boolean;
 
     // Typography
     fontSize: number;
@@ -87,6 +88,7 @@ export function createDefaultButtonElement(x = 50, y = 50): SectionElement {
         y,
         content: "Click Me",
         href: "#",
+        newTab: true,
         fontSize: 16,
         fontFamily: "Inter, sans-serif",
         fontWeight: "600",

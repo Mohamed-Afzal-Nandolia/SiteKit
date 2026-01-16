@@ -197,7 +197,11 @@ export function DraggableElement({
         if (!isEditMode) {
             // In view mode, buttons should navigate
             if (element.type === "button" && element.href) {
-                window.location.href = element.href;
+                if (element.newTab) {
+                    window.open(element.href, '_blank', 'noopener,noreferrer');
+                } else {
+                    window.location.href = element.href;
+                }
             }
             return;
         }

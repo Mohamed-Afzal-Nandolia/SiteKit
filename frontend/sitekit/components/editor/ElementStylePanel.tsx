@@ -559,6 +559,17 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                     />
                                 </div>
                             </div>
+                            <div className="mt-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={element.newTab || false}
+                                        onChange={(e) => onUpdate({ newTab: e.target.checked })}
+                                        className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-800"
+                                    />
+                                    <span className="text-sm text-slate-300">Open in new tab</span>
+                                </label>
+                            </div>
                         </div>
                     )}
                 </div>
