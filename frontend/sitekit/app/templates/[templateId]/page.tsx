@@ -51,23 +51,30 @@ export default function TemplatePreviewPage() {
         }
     }, [templateId]);
 
-    // Helper to slugify domain
+    // Helper to slugify domain - allows dots, hyphens, underscores
     const slugify = (text: string) => {
         return text
             .toString()
             .toLowerCase()
-            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/\s+/g, '-')       // Replace spaces with -
             .replace(/[^\w\-\.]+/g, '') // Remove all non-word chars (except . and -)
-            .replace(/\-\-+/g, '-')   // Replace multiple - with single -
-            .replace(/^-+/, '')       // Trim - from start
-            .replace(/-+$/, '');      // Trim - from end
+            .replace(/\-\-+/g, '-')     // Replace multiple - with single -
+            .replace(/^[-_.]+/, '')     // Trim -, _, . from start
+            .replace(/[-_.]+$/, '');    // Trim -, _, . from end
     };
     
-    // Domain validation regex
+    // Domain validation - allows simple identifiers without TLD
+    // e.g. "mysite", "my-site", "my_site", "my.site" are all valid
     const isValidDomain = (domain: string) => {
         if (!domain) return false;
-        // Regex to match backend validation
-        const domainRegex = /^(?=.{1,253}$)(?!-)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+        // Allow single alphanumeric character
+        if (domain.length === 1) {
+            return /^[A-Za-z0-9]$/.test(domain);
+        }
+        // Allows: alphanumeric, hyphens, underscores, dots
+        // Cannot start or end with special chars (-, _, .)
+        // Length: 2-63 characters
+        const domainRegex = /^(?![-_.])(?!.*[-_.]$)[A-Za-z0-9][A-Za-z0-9._-]{0,61}[A-Za-z0-9]$/;
         return domainRegex.test(domain);
     };
 
@@ -82,11 +89,12 @@ export default function TemplatePreviewPage() {
             return;
         }
 
-        const formattedDomain = slugify(newSiteName.trim());
+        const finalDomain = slugify(newSiteName.trim());
         
-        // Auto-append .com if no TLD acts as a fallback or you could force user input for domain separately
-        // For now, let's just ensure it has a TLD if validation fails, or blindly append '.com' if missing to pass validation
-        const finalDomain = isValidDomain(formattedDomain) ? formattedDomain : `${formattedDomain}.com`;
+        if (!isValidDomain(finalDomain)) {
+            alert("Invalid domain name. Please use only letters, numbers, hyphens, underscores, or dots.");
+            return;
+        }
 
         setIsUsingTemplate(true);
         setCreationStatus("Creating site...");

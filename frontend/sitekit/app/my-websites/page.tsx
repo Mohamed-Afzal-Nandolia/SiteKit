@@ -50,27 +50,30 @@ export default function MyWebsitesPage() {
     const [isRenaming, setIsRenaming] = useState(false);
     const [renameError, setRenameError] = useState<string | null>(null);
 
-    // Helper to slugify domain - Updated to allow dots for TLDs
+    // Helper to slugify domain - allows dots, hyphens, underscores
     const slugify = (text: string) => {
         return text
             .toString()
             .toLowerCase()
-            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/\s+/g, '-')       // Replace spaces with -
             .replace(/[^\w\-\.]+/g, '') // Remove all non-word chars (except . and -)
-            .replace(/\-\-+/g, '-')   // Replace multiple - with single -
-            .replace(/^-+/, '')       // Trim - from start
-            .replace(/-+$/, '');      // Trim - from end
+            .replace(/\-\-+/g, '-')     // Replace multiple - with single -
+            .replace(/^[-_.]+/, '')     // Trim -, _, . from start
+            .replace(/[-_.]+$/, '');    // Trim -, _, . from end
     };
 
-    // Domain validation regex
+    // Domain validation - allows simple identifiers without TLD
+    // e.g. "mysite", "my-site", "my_site", "my.site" are all valid
     const isValidDomain = (domain: string) => {
         if (!domain) return false;
-        // Regex to match backend validation:
-        // 1. Total length 1-253 chars
-        // 2. Cannot start with hyphen
-        // 3. Labels (parts) must start with alphanumeric, can contain hyphens, end with alphanumeric
-        // 4. Must have TLD (2-63 chars)
-        const domainRegex = /^(?=.{1,253}$)(?!-)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+        // Allow single alphanumeric character
+        if (domain.length === 1) {
+            return /^[A-Za-z0-9]$/.test(domain);
+        }
+        // Allows: alphanumeric, hyphens, underscores, dots
+        // Cannot start or end with special chars (-, _, .)
+        // Length: 2-63 characters
+        const domainRegex = /^(?![-_.])(?!.*[-_.]$)[A-Za-z0-9][A-Za-z0-9._-]{0,61}[A-Za-z0-9]$/;
         return domainRegex.test(domain);
     };
 
@@ -145,10 +148,24 @@ export default function MyWebsitesPage() {
         setCreateError(null);
 
         try {
-            const formattedDomain = slugify(newSiteDomain.trim());
+            const rawDomain = newSiteDomain.trim().toLowerCase();
+            
+            // Check for invalid start/end characters BEFORE slugifying
+            if (/^[-_.]/.test(rawDomain)) {
+                setCreateError("Domain cannot start with -, _, or .");
+                setIsCreating(false);
+                return;
+            }
+            if (/[-_.]$/.test(rawDomain)) {
+                setCreateError("Domain cannot end with -, _, or .");
+                setIsCreating(false);
+                return;
+            }
+            
+            const formattedDomain = slugify(rawDomain);
             
             if (!isValidDomain(formattedDomain)) {
-                setCreateError("Invalid domain format. Example: mysite.com");
+                setCreateError("Invalid domain. Use only letters, numbers, hyphens, underscores, or dots.");
                 setIsCreating(false);
                 return;
             }
@@ -207,10 +224,24 @@ export default function MyWebsitesPage() {
         setRenameError(null);
 
         try {
-            const formattedDomain = slugify(renameDomain.trim());
+            const rawDomain = renameDomain.trim().toLowerCase();
+            
+            // Check for invalid start/end characters BEFORE slugifying
+            if (/^[-_.]/.test(rawDomain)) {
+                setRenameError("Domain cannot start with -, _, or .");
+                setIsRenaming(false);
+                return;
+            }
+            if (/[-_.]$/.test(rawDomain)) {
+                setRenameError("Domain cannot end with -, _, or .");
+                setIsRenaming(false);
+                return;
+            }
+            
+            const formattedDomain = slugify(rawDomain);
             
             if (!isValidDomain(formattedDomain)) {
-                setRenameError("Invalid domain format. Example: mysite.com");
+                setRenameError("Invalid domain. Use only letters, numbers, hyphens, underscores, or dots.");
                 setIsRenaming(false);
                 return;
             }
@@ -677,7 +708,7 @@ export default function MyWebsitesPage() {
                                         type="text"
                                         value={renameDomain}
                                         onChange={(e) => setRenameDomain(e.target.value)}
-                                        placeholder="mywebsite.com"
+                                        placeholder="my-website"
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/50 focus:border-[#2563eb]"
                                         required
                                     />
@@ -750,7 +781,7 @@ export default function MyWebsitesPage() {
                                         type="text"
                                         value={newSiteDomain}
                                         onChange={(e) => setNewSiteDomain(e.target.value)}
-                                        placeholder="mywebsite.com"
+                                        placeholder="my-website"
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/50 focus:border-[#2563eb]"
                                         required
                                     />
