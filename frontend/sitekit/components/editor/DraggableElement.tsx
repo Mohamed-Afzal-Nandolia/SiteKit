@@ -153,8 +153,10 @@ export function DraggableElement({
         lineHeight: element.lineHeight,
         letterSpacing: `${element.letterSpacing}px`,
         textTransform: element.textTransform,
-        cursor: isEditMode ? (isDragging ? "grabbing" : "grab") : "default",
-        userSelect: isEditing ? "text" : "none",
+        cursor: isEditMode 
+            ? (isDragging ? "grabbing" : "grab") 
+            : (element.type === "button" ? "pointer" : "default"),
+        userSelect: isEditMode ? (isEditing ? "text" : "none") : "auto",
         zIndex: isSelected ? 100 : 60,
         boxShadow: isEditMode ? "0 2px 10px rgba(0,0,0,0.1)" : "none",
         // Button-specific styles
