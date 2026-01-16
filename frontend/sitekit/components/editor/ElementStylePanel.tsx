@@ -1,6 +1,5 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { SectionElement } from "./elementTypes";
 import { COLOR_PRESETS, FONT_OPTIONS, FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "./elementTypes";
 
@@ -17,9 +16,15 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
     const [showTextColorPicker, setShowTextColorPicker] = useState(false);
     const [showBgColorPicker, setShowBgColorPicker] = useState(false);
     const [position, setPosition] = useState<"right" | "left">("right");
+    const [mounted, setMounted] = useState(false);
     
     const panelWidth = 320;
     const panelGap = 12;
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
     
     useEffect(() => {
         if (anchorRect) {
@@ -67,7 +72,9 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
         }
     };
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <div 
             data-style-panel="true" 
             className="z-[9999]"
@@ -437,6 +444,7 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
