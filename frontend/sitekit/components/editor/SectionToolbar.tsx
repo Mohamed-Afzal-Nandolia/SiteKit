@@ -1,0 +1,137 @@
+"use client";
+
+import React, { useState } from "react";
+import { createDefaultTextElement, createDefaultButtonElement, COLOR_PRESETS } from "./elementTypes";
+import type { SectionElement } from "./elementTypes";
+
+interface SectionToolbarProps {
+    onAddElement: (element: SectionElement) => void;
+    onBackgroundChange?: (color: string) => void;
+    currentBackground?: string;
+    isVisible: boolean;
+}
+
+export function SectionToolbar({ 
+    onAddElement, 
+    onBackgroundChange, 
+    currentBackground,
+    isVisible 
+}: SectionToolbarProps) {
+    const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    if (!isVisible) return null;
+
+    const handleAddText = () => {
+        const textElement = createDefaultTextElement(50, 50);
+        onAddElement(textElement);
+        setIsExpanded(false);
+    };
+
+    const handleAddButton = () => {
+        const buttonElement = createDefaultButtonElement(50, 70);
+        onAddElement(buttonElement);
+        setIsExpanded(false);
+    };
+
+    const handleBackgroundSelect = (color: string) => {
+        if (onBackgroundChange) {
+            onBackgroundChange(color);
+        }
+        setShowBackgroundPicker(false);
+        setIsExpanded(false);
+    };
+
+    return (
+        <div className="absolute top-2 right-2 z-50">
+            {/* Main Toggle Button */}
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition-all ${
+                    isExpanded 
+                        ? "bg-blue-600 text-white" 
+                        : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                } border border-slate-200 dark:border-slate-700`}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                <span className="hidden sm:inline">Edit Section</span>
+            </button>
+
+            {/* Expanded Menu */}
+            {isExpanded && (
+                <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[200px]">
+                    {/* Add Text */}
+                    <button
+                        onClick={handleAddText}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                        <span className="text-xl">📝</span>
+                        <div>
+                            <div className="font-medium text-slate-900 dark:text-white text-sm">Add Text</div>
+                            <div className="text-xs text-slate-500">Add editable text</div>
+                        </div>
+                    </button>
+
+                    {/* Add Button */}
+                    <button
+                        onClick={handleAddButton}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-t border-slate-100 dark:border-slate-700"
+                    >
+                        <span className="text-xl">🔘</span>
+                        <div>
+                            <div className="font-medium text-slate-900 dark:text-white text-sm">Add Button</div>
+                            <div className="text-xs text-slate-500">Add clickable button</div>
+                        </div>
+                    </button>
+
+                    {/* Change Background */}
+                    <button
+                        onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-t border-slate-100 dark:border-slate-700"
+                    >
+                        <span className="text-xl">🎨</span>
+                        <div className="flex-1">
+                            <div className="font-medium text-slate-900 dark:text-white text-sm">Background</div>
+                            <div className="text-xs text-slate-500">Change section color</div>
+                        </div>
+                        {currentBackground && currentBackground !== "transparent" && (
+                            <div 
+                                className="w-6 h-6 rounded-full border-2 border-slate-300"
+                                style={{ backgroundColor: currentBackground }}
+                            />
+                        )}
+                    </button>
+
+                    {/* Background Color Picker */}
+                    {showBackgroundPicker && (
+                        <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                            <div className="grid grid-cols-7 gap-2 mb-2">
+                                {COLOR_PRESETS.map((color) => (
+                                    <button
+                                        key={color}
+                                        onClick={() => handleBackgroundSelect(color)}
+                                        className={`w-6 h-6 rounded-full border-2 hover:scale-110 transition-transform ${
+                                            currentBackground === color 
+                                                ? "border-blue-500 ring-2 ring-blue-500/30" 
+                                                : "border-slate-300 dark:border-slate-600"
+                                        }`}
+                                        style={{ backgroundColor: color }}
+                                    />
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => handleBackgroundSelect("transparent")}
+                                className="w-full px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
+                            >
+                                Remove Background
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}

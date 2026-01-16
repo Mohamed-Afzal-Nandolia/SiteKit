@@ -1,0 +1,442 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import type { SectionElement } from "./elementTypes";
+import { COLOR_PRESETS, FONT_OPTIONS, FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "./elementTypes";
+
+interface ElementStylePanelProps {
+    element: SectionElement;
+    onUpdate: (updates: Partial<SectionElement>) => void;
+    onDelete: () => void;
+    onClose: () => void;
+    anchorRect?: { top: number; left: number; right: number; bottom: number; width: number; height: number };
+}
+
+export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchorRect }: ElementStylePanelProps) {
+    const [activeTab, setActiveTab] = useState<"format" | "colors" | "button">("format");
+    const [showTextColorPicker, setShowTextColorPicker] = useState(false);
+    const [showBgColorPicker, setShowBgColorPicker] = useState(false);
+    const [position, setPosition] = useState<"right" | "left">("right");
+    
+    const panelWidth = 320;
+    const panelGap = 12;
+    
+    useEffect(() => {
+        if (anchorRect) {
+            // Check if there's enough space on the right
+            const spaceOnRight = window.innerWidth - anchorRect.right;
+            const spaceOnLeft = anchorRect.left;
+            
+            if (spaceOnRight >= panelWidth + panelGap) {
+                setPosition("right");
+            } else if (spaceOnLeft >= panelWidth + panelGap) {
+                setPosition("left");
+            } else {
+                // Default to right if neither side has enough space
+                setPosition("right");
+            }
+        }
+    }, [anchorRect]);
+    
+    // Calculate panel style based on anchor position
+    const getPanelStyle = (): React.CSSProperties => {
+        if (!anchorRect) {
+            // Fallback: center of screen
+            return {
+                position: "fixed",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+            };
+        }
+        
+        const top = Math.max(10, Math.min(anchorRect.top, window.innerHeight - 400));
+        
+        if (position === "right") {
+            return {
+                position: "fixed",
+                top: `${top}px`,
+                left: `${anchorRect.right + panelGap}px`,
+            };
+        } else {
+            return {
+                position: "fixed",
+                top: `${top}px`,
+                left: `${anchorRect.left - panelWidth - panelGap}px`,
+            };
+        }
+    };
+
+    return (
+        <div 
+            data-style-panel="true" 
+            className="z-[9999]"
+            style={{ ...getPanelStyle(), width: `${panelWidth}px` }}
+        >
+            <div className="bg-slate-800 text-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-700 overflow-hidden max-h-[60vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 sticky top-0 bg-slate-800">
+                    <span className="font-semibold text-sm">
+                        {element.type === "text" ? "Edit Text" : "Edit Button"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onDelete}
+                            className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                            title="Delete"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Tab Navigation */}
+                <div className="flex border-b border-slate-700">
+                    <button
+                        onClick={() => setActiveTab("format")}
+                        className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                            activeTab === "format" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                        }`}
+                    >
+                        Format
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("colors")}
+                        className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                            activeTab === "colors" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                        }`}
+                    >
+                        Colors
+                    </button>
+                    {element.type === "button" && (
+                        <button
+                            onClick={() => setActiveTab("button")}
+                            className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                                activeTab === "button" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Button
+                        </button>
+                    )}
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-4">
+                    {/* Format Tab */}
+                    {activeTab === "format" && (
+                        <div className="space-y-4">
+                            {/* Font Family & Size */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Font</label>
+                                    <select
+                                        value={element.fontFamily}
+                                        onChange={(e) => onUpdate({ fontFamily: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {FONT_OPTIONS.map((font) => (
+                                            <option key={font.value} value={font.value}>{font.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Size</label>
+                                    <select
+                                        value={element.fontSize}
+                                        onChange={(e) => onUpdate({ fontSize: parseInt(e.target.value) })}
+                                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {FONT_SIZE_OPTIONS.map((size) => (
+                                            <option key={size} value={size}>{size}px</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Font Weight */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">Weight</label>
+                                <select
+                                    value={element.fontWeight}
+                                    onChange={(e) => onUpdate({ fontWeight: e.target.value })}
+                                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                >
+                                    {FONT_WEIGHT_OPTIONS.map((w) => (
+                                        <option key={w.value} value={w.value}>{w.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Style Buttons */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">Style</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => onUpdate({ fontWeight: element.fontWeight === "700" ? "400" : "700" })}
+                                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
+                                            element.fontWeight === "700" || element.fontWeight === "800"
+                                                ? "bg-blue-600 text-white"
+                                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                                        }`}
+                                    >
+                                        B
+                                    </button>
+                                    <button
+                                        onClick={() => onUpdate({ fontStyle: element.fontStyle === "italic" ? "normal" : "italic" })}
+                                        className={`flex-1 px-3 py-2 rounded-lg text-sm italic transition-colors ${
+                                            element.fontStyle === "italic"
+                                                ? "bg-blue-600 text-white"
+                                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                                        }`}
+                                    >
+                                        I
+                                    </button>
+                                    <button
+                                        onClick={() => onUpdate({ textDecoration: element.textDecoration === "underline" ? "none" : "underline" })}
+                                        className={`flex-1 px-3 py-2 rounded-lg text-sm underline transition-colors ${
+                                            element.textDecoration === "underline"
+                                                ? "bg-blue-600 text-white"
+                                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                                        }`}
+                                    >
+                                        U
+                                    </button>
+                                    <button
+                                        onClick={() => onUpdate({ textDecoration: element.textDecoration === "line-through" ? "none" : "line-through" })}
+                                        className={`flex-1 px-3 py-2 rounded-lg text-sm line-through transition-colors ${
+                                            element.textDecoration === "line-through"
+                                                ? "bg-blue-600 text-white"
+                                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                                        }`}
+                                    >
+                                        S
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Alignment */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">Alignment</label>
+                                <div className="flex gap-2">
+                                    {(["left", "center", "right"] as const).map((align) => (
+                                        <button
+                                            key={align}
+                                            onClick={() => onUpdate({ textAlign: align })}
+                                            className={`flex-1 px-3 py-2 rounded-lg text-sm transition-colors ${
+                                                element.textAlign === align
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                                            }`}
+                                        >
+                                            {align === "left" && (
+                                                <svg className="w-4 h-4 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>
+                                                </svg>
+                                            )}
+                                            {align === "center" && (
+                                                <svg className="w-4 h-4 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+                                                </svg>
+                                            )}
+                                            {align === "right" && (
+                                                <svg className="w-4 h-4 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/>
+                                                </svg>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Text Transform */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">Transform</label>
+                                <div className="flex gap-2">
+                                    {(["none", "uppercase", "lowercase", "capitalize"] as const).map((transform) => (
+                                        <button
+                                            key={transform}
+                                            onClick={() => onUpdate({ textTransform: transform })}
+                                            className={`flex-1 px-2 py-2 rounded-lg text-xs transition-colors ${
+                                                element.textTransform === transform
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                                            }`}
+                                        >
+                                            {transform === "none" ? "Aa" : transform === "uppercase" ? "AA" : transform === "lowercase" ? "aa" : "Aa"}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Colors Tab */}
+                    {activeTab === "colors" && (
+                        <div className="space-y-4">
+                            {/* Text Color */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-2">Text Color</label>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <button
+                                        onClick={() => setShowTextColorPicker(!showTextColorPicker)}
+                                        className="w-10 h-10 rounded-lg border-2 border-slate-600"
+                                        style={{ backgroundColor: element.textColor }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={element.textColor}
+                                        onChange={(e) => onUpdate({ textColor: e.target.value })}
+                                        className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm font-mono"
+                                    />
+                                </div>
+                                {showTextColorPicker && (
+                                    <div className="grid grid-cols-7 gap-2 p-2 bg-slate-700 rounded-lg">
+                                        {COLOR_PRESETS.map((color) => (
+                                            <button
+                                                key={color}
+                                                onClick={() => { onUpdate({ textColor: color }); setShowTextColorPicker(false); }}
+                                                className="w-8 h-8 rounded-lg border-2 border-slate-500 hover:scale-110 transition-transform"
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Background Color */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-2">Background</label>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <button
+                                        onClick={() => setShowBgColorPicker(!showBgColorPicker)}
+                                        className="w-10 h-10 rounded-lg border-2 border-slate-600"
+                                        style={{ 
+                                            backgroundColor: element.backgroundColor === "transparent" ? "transparent" : element.backgroundColor,
+                                            backgroundImage: element.backgroundColor === "transparent" 
+                                                ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)"
+                                                : "none",
+                                            backgroundSize: "8px 8px",
+                                        }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={element.backgroundColor}
+                                        onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
+                                        className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm font-mono"
+                                    />
+                                </div>
+                                {showBgColorPicker && (
+                                    <div className="p-2 bg-slate-700 rounded-lg">
+                                        <button
+                                            onClick={() => { onUpdate({ backgroundColor: "transparent" }); setShowBgColorPicker(false); }}
+                                            className="w-full px-3 py-2 mb-2 bg-slate-600 rounded-lg text-sm hover:bg-slate-500"
+                                        >
+                                            Transparent
+                                        </button>
+                                        <div className="grid grid-cols-7 gap-2">
+                                            {COLOR_PRESETS.map((color) => (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => { onUpdate({ backgroundColor: color }); setShowBgColorPicker(false); }}
+                                                    className="w-8 h-8 rounded-lg border-2 border-slate-500 hover:scale-110 transition-transform"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Button Tab */}
+                    {activeTab === "button" && element.type === "button" && (
+                        <div className="space-y-4">
+                            {/* Link URL */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">Link URL</label>
+                                <input
+                                    type="text"
+                                    value={element.href || ""}
+                                    onChange={(e) => onUpdate({ href: e.target.value })}
+                                    placeholder="https://..."
+                                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            {/* Border Radius */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">
+                                    Border Radius: {element.borderRadius || 0}px
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="50"
+                                    value={element.borderRadius || 0}
+                                    onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
+                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                />
+                            </div>
+
+                            {/* Padding */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">
+                                        Padding X: {element.paddingX || 0}px
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="4"
+                                        max="64"
+                                        value={element.paddingX || 24}
+                                        onChange={(e) => onUpdate({ paddingX: parseInt(e.target.value) })}
+                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">
+                                        Padding Y: {element.paddingY || 0}px
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="4"
+                                        max="32"
+                                        value={element.paddingY || 12}
+                                        onChange={(e) => onUpdate({ paddingY: parseInt(e.target.value) })}
+                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Border */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">
+                                    Border Width: {element.borderWidth || 0}px
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="5"
+                                    value={element.borderWidth || 0}
+                                    onChange={(e) => onUpdate({ borderWidth: parseInt(e.target.value) })}
+                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

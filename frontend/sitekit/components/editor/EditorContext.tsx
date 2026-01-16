@@ -236,6 +236,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 const section = sections.find(s => s.id === sectionId);
                 if (section) {
                     const configString = JSON.stringify(config);
+                    console.log("Saving section", sectionId, "with config:", config);
+                    console.log("Config string:", configString);
                     updatePromises.push(
                         updateSection({
                             id: sectionId,
