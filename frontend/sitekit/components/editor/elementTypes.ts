@@ -32,6 +32,10 @@ export interface SectionElement {
     paddingY?: number;
     borderWidth?: number;
     borderColor?: string;
+
+    // Text Stroke/Outline (for text elements)
+    textStrokeColor?: string;
+    textStrokeWidth?: number;
 }
 
 // Extended section config with elements

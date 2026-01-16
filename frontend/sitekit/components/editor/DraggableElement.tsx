@@ -173,8 +173,20 @@ export function DraggableElement({
         ...(element.type === "text" && {
             padding: "8px 16px",
             minWidth: "100px",
-            borderRadius: "4px",
-            textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000", // Black border effect
+            borderRadius: `${element.borderRadius !== undefined ? element.borderRadius : 4}px`,
+            borderWidth: `${element.borderWidth || 0}px`,
+            borderStyle: "solid",
+            borderColor: element.borderColor || "transparent",
+            // Use text-shadow to simulate text stroke as it's more widely supported than -webkit-text-stroke
+            // Default to the previous black outline if no stroke color is set, OR if user explicitly sets it
+            textShadow: element.textStrokeWidth 
+                ? Array.from({ length: 8 }, (_, i) => {
+                    const angle = (i * 45) * (Math.PI / 180);
+                    const x = Math.round(Math.cos(angle) * (element.textStrokeWidth || 1));
+                    const y = Math.round(Math.sin(angle) * (element.textStrokeWidth || 1));
+                    return `${x}px ${y}px 0 ${element.textStrokeColor || "#000"}`;
+                  }).join(", ")
+                : (element.textStrokeColor ? `1px 1px 0 ${element.textStrokeColor}, -1px -1px 0 ${element.textStrokeColor}, 1px -1px 0 ${element.textStrokeColor}, -1px 1px 0 ${element.textStrokeColor}` : "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000"),
         }),
     };
 

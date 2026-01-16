@@ -15,6 +15,8 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
     const [activeTab, setActiveTab] = useState<"format" | "colors" | "button">("format");
     const [showTextColorPicker, setShowTextColorPicker] = useState(false);
     const [showBgColorPicker, setShowBgColorPicker] = useState(false);
+    const [showBorderColorPicker, setShowBorderColorPicker] = useState(false);
+    const [showTextStrokeColorPicker, setShowTextStrokeColorPicker] = useState(false);
     const [position, setPosition] = useState<"right" | "left">("right");
     const [mounted, setMounted] = useState(false);
     
@@ -363,6 +365,153 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                     </div>
                                 )}
                             </div>
+
+                            {/* Text Outline (Stroke) - Only for Text */}
+                            {element.type === "text" && (
+                                <div className="pt-4 border-t border-slate-700">
+                                    <label className="block text-xs text-slate-400 mb-3 font-semibold">Text Outline</label>
+                                    
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        {/* Outline Color */}
+                                        <div>
+                                            <label className="block text-[10px] text-slate-500 mb-1">Color</label>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowTextStrokeColorPicker(!showTextStrokeColorPicker)}
+                                                    className="w-full h-8 rounded border border-slate-600 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 transition-colors"
+                                                >
+                                                    <div 
+                                                        className="w-4 h-4 rounded-sm border border-slate-500"
+                                                        style={{ backgroundColor: element.textStrokeColor || "#000" }}
+                                                    />
+                                                </button>
+                                                
+                                                {showTextStrokeColorPicker && (
+                                                    <div className="absolute top-full left-0 mt-2 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 w-48">
+                                                        <div className="grid grid-cols-5 gap-1">
+                                                            {COLOR_PRESETS.map((color) => (
+                                                                <button
+                                                                    key={color}
+                                                                    onClick={() => { 
+                                                                        const updates: Partial<SectionElement> = { textStrokeColor: color };
+                                                                        // Auto-set width to 1 if it's 0
+                                                                        if (!element.textStrokeWidth) {
+                                                                            updates.textStrokeWidth = 1;
+                                                                        }
+                                                                        onUpdate(updates); 
+                                                                        setShowTextStrokeColorPicker(false); 
+                                                                    }}
+                                                                    className="w-6 h-6 rounded border border-slate-600 hover:scale-110 transition-transform"
+                                                                    style={{ backgroundColor: color }}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Outline Width */}
+                                        <div>
+                                            <label className="block text-[10px] text-slate-500 mb-1">
+                                                Width: {element.textStrokeWidth ?? 0}px
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="5"
+                                                value={element.textStrokeWidth ?? 0}
+                                                onChange={(e) => onUpdate({ textStrokeWidth: parseInt(e.target.value) })}
+                                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-2"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Border Options (Box Border) */}
+                            <div className="pt-4 border-t border-slate-700">
+                                <label className="block text-xs text-slate-400 mb-3 font-semibold">Box Border</label>
+                                
+                                {/* Border Color & Width */}
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div>
+                                        <label className="block text-[10px] text-slate-500 mb-1">Color</label>
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setShowBorderColorPicker(!showBorderColorPicker)}
+                                                className="w-full h-8 rounded border border-slate-600 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 transition-colors"
+                                            >
+                                                <div 
+                                                    className="w-4 h-4 rounded-sm border border-slate-500"
+                                                    style={{ backgroundColor: element.borderColor || "transparent" }}
+                                                />
+                                                <span className="text-xs text-slate-300">
+                                                    {element.borderColor === "transparent" || !element.borderColor ? "None" : ""}
+                                                </span>
+                                            </button>
+                                            
+                                            {showBorderColorPicker && (
+                                                <div className="absolute top-full left-0 mt-2 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 w-48">
+                                                    <button
+                                                        onClick={() => { onUpdate({ borderColor: "transparent" }); setShowBorderColorPicker(false); }}
+                                                        className="w-full px-3 py-1.5 mb-2 bg-slate-700 rounded text-xs hover:bg-slate-600"
+                                                    >
+                                                        No Border
+                                                    </button>
+                                                    <div className="grid grid-cols-5 gap-1">
+                                                        {COLOR_PRESETS.map((color) => (
+                                                            <button
+                                                                key={color}
+                                                                onClick={() => { 
+                                                                    // Auto-set border width to 2 if it's 0 so user sees the change
+                                                                    const updates: Partial<SectionElement> = { borderColor: color };
+                                                                    if (!element.borderWidth) {
+                                                                        updates.borderWidth = 2;
+                                                                    }
+                                                                    onUpdate(updates); 
+                                                                    setShowBorderColorPicker(false); 
+                                                                }}
+                                                                className="w-6 h-6 rounded border border-slate-600 hover:scale-110 transition-transform"
+                                                                style={{ backgroundColor: color }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] text-slate-500 mb-1">
+                                            Width: {element.borderWidth || 0}px
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="10"
+                                            value={element.borderWidth || 0}
+                                            onChange={(e) => onUpdate({ borderWidth: parseInt(e.target.value) })}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-2"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Border Radius */}
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">
+                                        Radius: {element.borderRadius || 0}px
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="50"
+                                        value={element.borderRadius || 0}
+                                        onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
+                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -378,21 +527,6 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                     onChange={(e) => onUpdate({ href: e.target.value })}
                                     placeholder="https://..."
                                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* Border Radius */}
-                            <div>
-                                <label className="block text-xs text-slate-400 mb-1">
-                                    Border Radius: {element.borderRadius || 0}px
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="50"
-                                    value={element.borderRadius || 0}
-                                    onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
-                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                 />
                             </div>
 
@@ -424,21 +558,6 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                         className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                     />
                                 </div>
-                            </div>
-
-                            {/* Border */}
-                            <div>
-                                <label className="block text-xs text-slate-400 mb-1">
-                                    Border Width: {element.borderWidth || 0}px
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="5"
-                                    value={element.borderWidth || 0}
-                                    onChange={(e) => onUpdate({ borderWidth: parseInt(e.target.value) })}
-                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                                />
                             </div>
                         </div>
                     )}
