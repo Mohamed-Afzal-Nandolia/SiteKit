@@ -13,6 +13,7 @@ import {
 } from "@/api";
 import type { JwtPayload, SiteDTO } from "@/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Toast } from "@/components/ui/Toast";
 
 export default function MyWebsitesPage() {
     const router = useRouter();
@@ -34,6 +35,7 @@ export default function MyWebsitesPage() {
     // Delete confirmation state
     const [siteToDelete, setSiteToDelete] = useState<SiteDTO | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
@@ -553,7 +555,7 @@ export default function MyWebsitesPage() {
                                                                             e.stopPropagation();
                                                                             const url = `${window.location.origin}/${site.domain || site.id}`;
                                                                             navigator.clipboard.writeText(url);
-                                                                            alert("Link copied to clipboard!"); 
+                                                                            setToast({ message: "Link copied to clipboard!", type: "success" });
                                                                             setOpenDropdownId(null);
                                                                         }}
                                                                         className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
@@ -657,7 +659,7 @@ export default function MyWebsitesPage() {
                                                                     e.stopPropagation();
                                                                     const url = `${window.location.origin}/${site.domain || site.id}`;
                                                                     navigator.clipboard.writeText(url);
-                                                                    alert("Link copied to clipboard!"); 
+                                                                    setToast({ message: "Link copied to clipboard!", type: "success" });
                                                                     setOpenDropdownId(null);
                                                                 }}
                                                                 className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
@@ -891,6 +893,15 @@ export default function MyWebsitesPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Toast Notification */}
+            {toast && (
+                <Toast 
+                    message={toast.message} 
+                    type={toast.type} 
+                    onClose={() => setToast(null)} 
+                />
             )}
         </div>
     );
