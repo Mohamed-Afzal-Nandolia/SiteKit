@@ -65,7 +65,7 @@ export function createDefaultTextElement(x = 50, y = 50): SectionElement {
         fontWeight: "400",
         fontStyle: "normal",
         textDecoration: "none",
-        textColor: "#1f2937",
+        textColor: "#FFFFFF",
         backgroundColor: "transparent",
         textAlign: "center",
         lineHeight: 1.6,

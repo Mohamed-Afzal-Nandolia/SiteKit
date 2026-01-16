@@ -174,6 +174,7 @@ export function DraggableElement({
             padding: "8px 16px",
             minWidth: "100px",
             borderRadius: "4px",
+            textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000", // Black border effect
         }),
     };
 
