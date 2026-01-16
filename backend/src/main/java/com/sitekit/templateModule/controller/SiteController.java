@@ -47,4 +47,9 @@ public class SiteController {
         return ResponseEntity.ok(siteService.updateSiteName(siteDto));
     }
 
+    @PatchMapping(APIEndpoints.UPDATE_SITE_DOMAIN)
+    public ResponseEntity<Map<String, String>> updateSiteDomain(@RequestBody SiteDTO siteDto) {
+        return ResponseEntity.ok(siteService.updateSiteDomain(siteDto));
+    }
+
 }

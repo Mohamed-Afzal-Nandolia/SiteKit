@@ -23,6 +23,7 @@ public interface APIEndpoints {
     String GET_SITE_BY_ID = "/get-site";
     String UPDATE_SITE_STATUS = "/update-site-status";
     String UPDATE_SITE_NAME = "/update-site-name";
+    String UPDATE_SITE_DOMAIN = "/update-site-domain";
     String GET_ALL_SITE_TEMPLATES = "/get-all-site-templates";
     String GET_ALL_TEMPLATES = "/get-all-templates";
 

@@ -96,10 +96,23 @@ public class SiteServiceImpl implements SiteService {
         if (siteRepository.existsByDomain(siteDTO.getDomain()))
             throw new ResourceAlreadyExists("Domain is already '" + siteEntity.getDomain() + "'");
 
-        siteEntity.setDomain(siteDTO.getDomain());
         siteEntity.setName(siteDTO.getName());
         siteRepository.save(siteEntity);
-        return Map.of("success", "Site '" + siteEntity.getName() + "' updated successfully");
+        return Map.of("success", "Site Name '" + siteEntity.getName() + "' updated successfully");
+    }
+
+    @Override
+    public Map<String, String> updateSiteDomain(SiteDTO siteDTO) {
+        userUtils.getUserById(siteDTO.getUser().getId());
+        SiteEntity siteEntity = siteRepository.findById(siteDTO.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Site not found"));
+
+        if (siteRepository.existsByDomain(siteDTO.getDomain()))
+            throw new ResourceAlreadyExists("Domain is already '" + siteEntity.getDomain() + "'");
+
+        siteEntity.setDomain(siteDTO.getDomain());
+        siteRepository.save(siteEntity);
+        return Map.of("success", "Site Domain '" + siteEntity.getName() + "' updated successfully");
     }
 
 }
