@@ -6,6 +6,7 @@ import type { SectionElement } from "./elementTypes";
 
 interface SectionToolbarProps {
     onAddElement: (element: SectionElement) => void;
+    onAddShape?: () => void;
     onBackgroundChange?: (color: string) => void;
     currentBackground?: string;
     isVisible: boolean;
@@ -13,6 +14,7 @@ interface SectionToolbarProps {
 
 export function SectionToolbar({ 
     onAddElement, 
+    onAddShape,
     onBackgroundChange, 
     currentBackground,
     isVisible 
@@ -86,6 +88,23 @@ export function SectionToolbar({
                             <div className="text-xs text-slate-500">Add clickable button</div>
                         </div>
                     </button>
+
+                    {/* Add Shape */}
+                    {onAddShape && (
+                        <button
+                            onClick={() => {
+                                onAddShape();
+                                setIsExpanded(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-t border-slate-100 dark:border-slate-700"
+                        >
+                            <span className="text-xl">⭕</span>
+                            <div>
+                                <div className="font-medium text-slate-900 dark:text-white text-sm">Add Shape</div>
+                                <div className="text-xs text-slate-500">Add decorative shape</div>
+                            </div>
+                        </button>
+                    )}
 
                     {/* Change Background */}
                     <button
