@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAllSites, getPagesBySite, getSections, getUserFromToken, addSection, deleteSection } from "@/api";
+import { getAllSites, getPagesBySite, getSections, getUserFromToken, deleteSection, reorderSections } from "@/api";
 import { SectionRenderer } from "@/components/renderer/SectionRenderer";
 import { EditorProvider, useEditor, SectionWrapper, AddSectionButton, SectionPicker, SortableSectionList } from "@/components/editor";
 import type { SiteDTO, PageDTO, PageSectionDTO, SectionType } from "@/api";
@@ -29,7 +29,8 @@ function EditorContent({
         isSaving,
         pendingDeletions,
         markSectionForDeletion,
-        moveSection
+        moveSection,
+        addSection
     } = useEditor();
     
     const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -68,35 +69,15 @@ function EditorContent({
     const [insertPosition, setInsertPosition] = useState<number>(0);
 
     // Handle add section
-    const handleAddSection = async (sectionType: SectionType, variant: string) => {
+    const handleAddSection = (sectionType: SectionType, variant: string) => {
         if (!currentPage?.id) return;
         
-        try {
-            const result = await addSection({
-                userId: userId,
-                pageId: currentPage.id,
-                sectionType: sectionType,
-                variant: variant,
-                config: {}, // Default empty config
-            });
+        console.log("Adding section locally:", { sectionType, variant, pageId: currentPage.id, position: insertPosition });
 
-            if (result.data) {
-                // Reload sections to get the new one
-                const sectionsRes = await getSections({ userId, pageId: currentPage.id });
-                if (sectionsRes.data) {
-                    setSections(sectionsRes.data);
-                }
-                setSaveMessage({ type: "success", text: "Section added!" });
-                setTimeout(() => setSaveMessage(null), 2000);
-            } else {
-                setSaveMessage({ type: "error", text: result.error || "Failed to add section" });
-                setTimeout(() => setSaveMessage(null), 3000);
-            }
-        } catch (error) {
-            console.error("Failed to add section:", error);
-            setSaveMessage({ type: "error", text: "Failed to add section" });
-            setTimeout(() => setSaveMessage(null), 3000);
-        }
+        addSection(sectionType, variant, currentPage.id, insertPosition);
+        
+        setSaveMessage({ type: "success", text: "Section added (Unsaved)" });
+        setTimeout(() => setSaveMessage(null), 2000);
     };
 
     // Handle delete section - SOFT DELETE (just mark for deletion, don't call API yet)
@@ -255,7 +236,10 @@ function EditorContent({
                 <div className="min-h-full bg-white dark:bg-black shadow-2xl mx-auto transition-all duration-300 w-full" style={{ maxWidth: '100%' }}>
                     {/* Add Section at top */}
                     {isEditMode && sortedSections.length > 0 && (
-                        <AddSectionButton onClick={() => setShowSectionPicker(true)} />
+                        <AddSectionButton onClick={() => {
+                            setInsertPosition(0);
+                            setShowSectionPicker(true);
+                        }} />
                     )}
 
                     {/* Render Sections with Drag-and-Drop */}
@@ -275,7 +259,10 @@ function EditorContent({
                                     </SectionWrapper>
                                     {/* Add Section button between sections */}
                                     {isEditMode && index < sortedSections.length - 1 && (
-                                        <AddSectionButton onClick={() => setShowSectionPicker(true)} />
+                                        <AddSectionButton onClick={() => {
+                                            setInsertPosition(index + 1);
+                                            setShowSectionPicker(true);
+                                        }} />
                                     )}
                                 </React.Fragment>
                             )}
@@ -284,7 +271,10 @@ function EditorContent({
                         <div className="py-40 flex flex-col items-center justify-center text-slate-400">
                             <p>Empty Page</p>
                             <button 
-                                onClick={() => setShowSectionPicker(true)}
+                                onClick={() => {
+                                    setInsertPosition(0);
+                                    setShowSectionPicker(true);
+                                }}
                                 className="mt-4 px-4 py-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-500 transition-colors"
                             >
                                 + Add Section
@@ -294,7 +284,10 @@ function EditorContent({
 
                     {/* Add Section at bottom */}
                     {isEditMode && sortedSections.length > 0 && (
-                        <AddSectionButton onClick={() => setShowSectionPicker(true)} />
+                        <AddSectionButton onClick={() => {
+                            setInsertPosition(sortedSections.length);
+                            setShowSectionPicker(true);
+                        }} />
                     )}
                 </div>
             </main>

@@ -34,7 +34,10 @@ interface EditorContextState {
     moveSection: (sectionId: number, direction: "up" | "down") => void;
     hasReorderChanges: boolean;
     
-    // Check if there are any pending changes (config updates, deletions, or reorders)
+    // Add a new section locally (with negative temp ID)
+    addSection: (sectionType: any, variant: string, pageId: number, position?: number) => void;
+
+    // Check if there are any pending changes (config updates, deletions, reorders, or additions)
     hasPendingChanges: boolean;
     
     // Save functionality
@@ -57,6 +60,7 @@ const defaultContextValue: EditorContextState = {
     markSectionForDeletion: () => {},
     restoreSection: () => {},
     moveSection: () => {},
+    addSection: () => {},
     hasReorderChanges: false,
     hasPendingChanges: false,
     saveAllChanges: async () => ({ success: false }),
@@ -110,13 +114,53 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         setSectionsState(newSections);
         // Store original order for detecting reorder changes
         setOriginalOrder(newSections.map(s => s.id!).filter(Boolean));
-        // Clear pending changes and deletions when new sections are loaded
-        setPendingChanges(new Map());
-        setPendingDeletions(new Set());
+        
+        // IMPORTANT: We DO NOT clear pending changes/deletions here anymore.
+        // This is because setSections is called when adding a new section,
+        // and we don't want to lose unsaved changes in other sections.
+    }, []);
+
+    // Add a new section locally
+    const addSection = useCallback((sectionType: any, variant: string, pageId: number, position?: number) => {
+        const tempId = -Date.now(); // Negative ID for temp sections
+        
+        const newSection: PageSectionDTO = {
+            id: tempId,
+            pageId,
+            sectionType,
+            variant,
+            config: {},
+            configJson: "{}",
+            position: position || 0,
+        };
+
+        setSectionsState(prev => {
+            const sorted = [...prev].sort((a, b) => (a.position || 0) - (b.position || 0));
+            
+            // If position is provided, insert there. Otherwise append.
+            const insertIndex = position !== undefined 
+                ? Math.min(Math.max(0, position), sorted.length)
+                : sorted.length;
+                
+            const newSections = [...sorted];
+            newSections.splice(insertIndex, 0, newSection);
+            
+            // Re-index positions
+            return newSections.map((s, idx) => ({
+                ...s,
+                position: idx
+            }));
+        });
     }, []);
 
     // Mark a section for deletion (soft delete - only removes from UI)
     const markSectionForDeletion = useCallback((sectionId: number) => {
+        // If it's a temp section (negative ID), just remove it completely from state
+        if (sectionId < 0) {
+            setSectionsState(prev => prev.filter(s => s.id !== sectionId));
+            return;
+        }
+
         setPendingDeletions(prev => {
             const updated = new Set(prev);
             updated.add(sectionId);
@@ -171,6 +215,11 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         return !currentOrder.every((id, index) => id === filteredOriginal[index]);
     }, [sections, originalOrder, pendingDeletions]);
 
+    // Check if there are any added sections
+    const hasAddedSections = React.useMemo(() => {
+        return sections.some(s => (s.id || 0) < 0);
+    }, [sections]);
+
     // Get section config (with pending changes applied)
     const getSectionConfig = useCallback((sectionId: number): Record<string, unknown> | null => {
         const section = sections.find(s => s.id === sectionId);
@@ -223,21 +272,63 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     // Order: Add sections → Update configs → Delete sections → Reorder (LAST)
     const saveAllChanges = useCallback(async (userId: number, pageId: number): Promise<{ success: boolean; error?: string }> => {
         setIsSaving(true);
+        const tempToRealId = new Map<number, number>();
 
         try {
             const errors: string[] = [];
 
-            // 1. Handle config updates (skip sections that are pending deletion)
+            // 0. Handle New Sections (Negative IDs)
+            const newSections = sections.filter(s => (s.id || 0) < 0);
+            const addPromises: Promise<any>[] = [];
+
+            // Import addSection here to avoid circular dependency issues if declared at top with useEditor
+             const { addSection: apiAddSection } = await import("@/api");
+
+            for (const section of newSections) {
+                if (!section.id || !section.sectionType) continue;
+                
+                // Get latest config (from pending or current state)
+                const config = getSectionConfig(section.id) || {};
+                
+                console.log("Saving NEW section", section.sectionType);
+                
+                // We run these sequentially to ensure we get IDs mapped correctly before moving on? 
+                // Actually parallel is fine for creation, but we need to map them all before reordering.
+                // Using Promise.all would need us to track which promise corresponds to which temp ID.
+                try {
+                    const result = await apiAddSection({
+                        userId,
+                        pageId: pageId,
+                        sectionType: section.sectionType,
+                        variant: section.variant,
+                        config: config,
+                    });
+                    
+                    if (result.data && result.data.id) {
+                        tempToRealId.set(section.id, result.data.id);
+                    } else {
+                        errors.push(`Failed to create section ${section.sectionType}: ${result.error}`);
+                    }
+                } catch (err) {
+                    errors.push(`Failed to create section ${section.sectionType}`);
+                }
+            }
+
+            // If we had errors creating sections, we might want to stop? 
+            // For now let's continue but report errors.
+
+            // 1. Handle config updates (skip sections that are pending deletion OR were just added)
             const updatePromises: Promise<any>[] = [];
             pendingChanges.forEach((config, sectionId) => {
                 // Don't update config for sections that will be deleted
                 if (pendingDeletions.has(sectionId)) return;
+                
+                // Don't update config for sections we just added (their config was sent in addSection)
+                if (sectionId < 0) return;
 
                 const section = sections.find(s => s.id === sectionId);
                 if (section) {
                     const configString = JSON.stringify(config);
-                    console.log("Saving section", sectionId, "with config:", config);
-                    console.log("Config string:", configString);
                     updatePromises.push(
                         updateSection({
                             id: sectionId,
@@ -261,9 +352,12 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 await Promise.all(updatePromises);
             }
 
-            // 2. Handle deletions (call delete API for each)
+            // 2. Handle deletions
             const deletePromises: Promise<any>[] = [];
             pendingDeletions.forEach((sectionId) => {
+                // If it's a temp ID, we already handled it by not creating it (if it was somehow pending deletion and addition? Unlikely logic flow but safe).
+                if (sectionId < 0) return; 
+
                 deletePromises.push(
                     deleteSection({ userId, id: sectionId }).catch(err => {
                         errors.push(`Failed to delete section ${sectionId}`);
@@ -277,23 +371,44 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 await Promise.all(deletePromises);
             }
 
-            // 3. Handle reorder LAST (after all adds/updates/deletes)
-            if (hasReorderChanges) {
-                const orderedSectionIds = [...sections]
-                    .filter(s => s.id && !pendingDeletions.has(s.id))
-                    .sort((a, b) => (a.position || 0) - (b.position || 0))
-                    .map(s => s.id!);
-
-                if (orderedSectionIds.length > 0) {
-                    try {
-                        await reorderSections({
-                            userId,
-                            pageId,
-                            orderedSectionIds,
-                        });
-                    } catch (err) {
-                        errors.push("Failed to reorder sections");
+            // 3. Handle reorder LAST
+            // We need to construct the list using Real IDs.
+            // Any section that was just added needs its Real ID from tempToRealId.
+            // Any section that exists needs its existing ID.
+            
+            const orderedSectionIds: number[] = [];
+            const sortedCurrentSections = [...sections]
+                .filter(s => s.id && !pendingDeletions.has(s.id))
+                .sort((a, b) => (a.position || 0) - (b.position || 0));
+                
+            for (const s of sortedCurrentSections) {
+                if (!s.id) continue;
+                
+                if (s.id < 0) {
+                    // It's a new section, get the real ID
+                    const realId = tempToRealId.get(s.id);
+                    if (realId) {
+                        orderedSectionIds.push(realId);
+                    } else {
+                        // If we failed to create it, we can't include it in reorder.
+                        // Ideally we should have errored out earlier.
+                         console.warn("Skipping section in reorder because it has no real ID:", s.id);
                     }
+                } else {
+                    // Existing section
+                    orderedSectionIds.push(s.id);
+                }
+            }
+
+            if (orderedSectionIds.length > 0) {
+                try {
+                    await reorderSections({
+                        userId,
+                        pageId,
+                        orderedSectionIds,
+                    });
+                } catch (err) {
+                    errors.push("Failed to reorder sections");
                 }
             }
 
@@ -302,14 +417,29 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 return { success: false, error: errors.join(", ") };
             }
 
-            // Clear pending changes and deletions on success
-            setPendingChanges(new Map());
+            // SUCCESS!
             
-            // Remove deleted sections from local state and update original order
-            const remainingSections = sections.filter(s => s.id && !pendingDeletions.has(s.id));
-            setSectionsState(remainingSections);
-            setOriginalOrder(remainingSections.sort((a, b) => (a.position || 0) - (b.position || 0)).map(s => s.id!));
-            setPendingDeletions(new Set());
+            // Update local state to reflect the saves
+            setPendingChanges(new Map());
+             setPendingDeletions(new Set());
+             
+            // Update sections with their real IDs
+            setSectionsState(prev => {
+                const newSections = prev
+                     .filter(s => s.id && !pendingDeletions.has(s.id)) // Remove deleted
+                     .map(s => {
+                         if (s.id && s.id < 0 && tempToRealId.has(s.id)) {
+                             return { ...s, id: tempToRealId.get(s.id) };
+                         }
+                         return s;
+                     })
+                     .sort((a, b) => (a.position || 0) - (b.position || 0));
+                     
+                // Reset original order to this new clean state
+                setOriginalOrder(newSections.map(s => s.id!).filter(Boolean));
+                
+                return newSections;
+            });
 
             return { success: true };
 
@@ -336,8 +466,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         markSectionForDeletion,
         restoreSection,
         moveSection,
+        addSection, // Export the new function
         hasReorderChanges,
-        hasPendingChanges: pendingChanges.size > 0 || pendingDeletions.size > 0 || hasReorderChanges,
+        hasPendingChanges: pendingChanges.size > 0 || pendingDeletions.size > 0 || hasReorderChanges || hasAddedSections,
         saveAllChanges,
         isSaving,
     };
