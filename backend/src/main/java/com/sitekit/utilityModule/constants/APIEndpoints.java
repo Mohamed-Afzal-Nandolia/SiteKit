@@ -40,4 +40,13 @@ public interface APIEndpoints {
     String DELETE_SECTION = "/delete-section";
     String REORDER_SECTIONS = "/reorder-sections";
 
+    // Asset
+    String CREATE_ASSET = "/create-asset";
+    String GET_ASSET = "/get-asset";
+    String GET_ALL_ASSETS = "/get-all-assets";
+    String GET_ASSETS_BY_SITE = "/get-assets-by-site";
+    String GET_ASSETS_BY_TYPE = "/get-assets-by-type";
+    String UPDATE_ASSET = "/update-asset";
+    String DELETE_ASSET = "/delete-asset";
+
 }

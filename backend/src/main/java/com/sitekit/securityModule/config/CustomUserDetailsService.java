@@ -24,7 +24,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String emailAddress) throws UsernameNotFoundException {
         UserEntity user = userUtils.getUserByEmail(emailAddress);
 
-        return new org.springframework.security.core.userdetails.User(
+        return new CustomUserDetails(
+                user.getId(), // we are not sending the userid for any request it auto fetches from jwt session
                 user.getEmailAddress(),
                 user.getPassword(),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
