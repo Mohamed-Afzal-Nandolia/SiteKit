@@ -22,7 +22,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
     const { isEditMode } = useEditor();
     
     const { 
-        logoText = "Brand",
+        logoText,
         logoStyles = {},
         navLinks = [], 
         actionButton 
@@ -68,15 +68,18 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
         <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 {/* Logo */}
-                <div className="flex-shrink-0 font-bold text-xl text-slate-900 dark:text-white">
-                    <EditableText
-                        value={logoText}
-                        onUpdate={(newValue) => updateConfig({ logoText: newValue })}
-                        styles={logoStyles}
-                        onStyleUpdate={(newStyles) => updateConfig({ logoStyles: newStyles })}
-                        placeholder="Brand Name"
-                    />
-                </div>
+                {logoText && (
+                    <div className="flex-shrink-0 font-bold text-xl text-slate-900 dark:text-white">
+                        <EditableText
+                            value={logoText}
+                            onUpdate={(newValue) => updateConfig({ logoText: newValue })}
+                            styles={logoStyles}
+                            onStyleUpdate={(newStyles) => updateConfig({ logoStyles: newStyles })}
+                            onDelete={() => updateConfig({ logoText: undefined })}
+                            placeholder="Brand Name"
+                        />
+                    </div>
+                )}
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center gap-8">
@@ -89,6 +92,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                                 onUpdate={(newLabel, newHref) => updateNavLink(idx, newLabel, newHref)}
                                 styles={link.styles}
                                 onStyleUpdate={(newStyles) => updateNavLinkStyles(idx, newStyles)}
+                                onDelete={() => deleteNavLink(idx)}
                                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             />
                         ) : (
@@ -114,6 +118,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                                     onUpdate={updateActionButton}
                                     styles={actionButton.styles}
                                     onStyleUpdate={(newStyles) => updateConfig({ actionButton: { ...actionButton, styles: newStyles } })}
+                                    onDelete={() => updateConfig({ actionButton: undefined })}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                         actionButton.variant === "outline" 
                                             ? "border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"

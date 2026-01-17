@@ -35,14 +35,14 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
     const { isEditMode } = useEditor();
     
     const {
-        brandName = "SiteKit",
+        brandName,
         brandNameStyles = {},
-        description = "Building the web, one block at a time.",
+        description,
         descriptionStyles = {},
         columns = [],
         columnTitleStyles = [],
         columnLinkStyles = [],
-        copyrightText = "© 2024 SiteKit. All rights reserved.",
+        copyrightText,
         copyrightStyles = {}
     } = config || {};
 
@@ -91,25 +91,31 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                     <div className="col-span-1 md:col-span-1">
-                        <div className="font-bold text-xl text-slate-900 dark:text-white mb-4">
+                        {brandName && (
+                            <div className="font-bold text-xl text-slate-900 dark:text-white mb-4">
+                                <EditableText
+                                    value={brandName}
+                                    onUpdate={(newValue) => updateConfig({ brandName: newValue })}
+                                    styles={brandNameStyles}
+                                    onStyleUpdate={(newStyles) => updateConfig({ brandNameStyles: newStyles })}
+                                    onDelete={() => updateConfig({ brandName: undefined })}
+                                    placeholder="Brand Name"
+                                />
+                            </div>
+                        )}
+                        {description && (
                             <EditableText
-                                value={brandName}
-                                onUpdate={(newValue) => updateConfig({ brandName: newValue })}
-                                styles={brandNameStyles}
-                                onStyleUpdate={(newStyles) => updateConfig({ brandNameStyles: newStyles })}
-                                placeholder="Brand Name"
+                                value={description}
+                                onUpdate={(newValue) => updateConfig({ description: newValue })}
+                                styles={descriptionStyles}
+                                onStyleUpdate={(newStyles) => updateConfig({ descriptionStyles: newStyles })}
+                                onDelete={() => updateConfig({ description: undefined })}
+                                as="p"
+                                className="text-slate-600 dark:text-slate-400 text-sm"
+                                placeholder="Brand description..."
+                                multiline
                             />
-                        </div>
-                        <EditableText
-                            value={description}
-                            onUpdate={(newValue) => updateConfig({ description: newValue })}
-                            styles={descriptionStyles}
-                            onStyleUpdate={(newStyles) => updateConfig({ descriptionStyles: newStyles })}
-                            as="p"
-                            className="text-slate-600 dark:text-slate-400 text-sm"
-                            placeholder="Brand description..."
-                            multiline
-                        />
+                        )}
                     </div>
 
                     {columns.map((col, idx) => (
@@ -119,6 +125,10 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                                 onUpdate={(newValue) => updateColumnTitle(idx, newValue)}
                                 styles={columnTitleStyles[idx]}
                                 onStyleUpdate={(newStyles) => updateColumnTitleStyles(idx, newStyles)}
+                                onDelete={() => {
+                                    const updatedColumns = columns.filter((_, i) => i !== idx);
+                                    updateConfig({ columns: updatedColumns });
+                                }}
                                 as="h3"
                                 className="font-semibold text-slate-900 dark:text-white mb-4"
                                 placeholder="Column Title"
@@ -133,6 +143,12 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                                                 onUpdate={(newLabel, newHref) => updateColumnLink(idx, lIdx, newLabel, newHref)}
                                                 styles={columnLinkStyles[idx]?.[lIdx]}
                                                 onStyleUpdate={(newStyles) => updateColumnLinkStyles(idx, lIdx, newStyles)}
+                                                onDelete={() => {
+                                                    const updatedColumns = [...columns];
+                                                    const updatedLinks = updatedColumns[idx].links.filter((_, i) => i !== lIdx);
+                                                    updatedColumns[idx] = { ...updatedColumns[idx], links: updatedLinks };
+                                                    updateConfig({ columns: updatedColumns });
+                                                }}
                                                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                             />
                                         ) : (
@@ -150,15 +166,18 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                     ))}
                 </div>
 
-                <div className="pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500">
-                    <EditableText
-                        value={copyrightText}
-                        onUpdate={(newValue) => updateConfig({ copyrightText: newValue })}
-                        styles={copyrightStyles}
-                        onStyleUpdate={(newStyles) => updateConfig({ copyrightStyles: newStyles })}
-                        placeholder="© 2024 Your Company"
-                    />
-                </div>
+                {copyrightText && (
+                    <div className="pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500">
+                        <EditableText
+                            value={copyrightText}
+                            onUpdate={(newValue) => updateConfig({ copyrightText: newValue })}
+                            styles={copyrightStyles}
+                            onStyleUpdate={(newStyles) => updateConfig({ copyrightStyles: newStyles })}
+                            onDelete={() => updateConfig({ copyrightText: undefined })}
+                            placeholder="© 2024 Your Company"
+                        />
+                    </div>
+                )}
             </div>
         </footer>
     );

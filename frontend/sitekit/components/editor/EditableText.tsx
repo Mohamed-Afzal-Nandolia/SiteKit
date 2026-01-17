@@ -24,6 +24,8 @@ interface EditableTextProps {
     onStyleUpdate?: (newStyles: React.CSSProperties) => void;
     // Element ID (optional, used for selection tracking if needed)
     id?: string;
+    // Callback when element is deleted (optional, hides delete button if not provided)
+    onDelete?: () => void;
 }
 
 export function EditableText({
@@ -36,6 +38,7 @@ export function EditableText({
     styles = {},
     onStyleUpdate,
     id = "editable-text",
+    onDelete,
 }: EditableTextProps) {
     const { isEditMode } = useEditor();
     const elementRef = useRef<HTMLElement>(null);
@@ -338,7 +341,7 @@ export function EditableText({
                 <ElementStylePanel 
                     element={ephemeralElement}
                     onUpdate={handleStyleUpdate}
-                    onDelete={() => {}} // No delete for native elements
+                    onDelete={onDelete ? () => { onDelete(); setIsSelected(false); } : () => {}}
                     onClose={() => setIsSelected(false)}
                     anchorRect={anchorRect}
                 />
@@ -356,6 +359,8 @@ interface EditableLinkProps {
     as?: "a" | "button";
     styles?: React.CSSProperties;
     onStyleUpdate?: (newStyles: React.CSSProperties) => void;
+    // Callback when element is deleted (optional, hides delete button if not provided)
+    onDelete?: () => void;
 }
 
 export function EditableLink({
@@ -366,6 +371,7 @@ export function EditableLink({
     as: Component = "a",
     styles = {},
     onStyleUpdate,
+    onDelete,
 }: EditableLinkProps) {
     const { isEditMode } = useEditor();
     const [isEditingHref, setIsEditingHref] = useState(false);
@@ -644,7 +650,7 @@ export function EditableLink({
                 <ElementStylePanel 
                     element={ephemeralElement}
                     onUpdate={handleStyleUpdate}
-                    onDelete={() => {}} 
+                    onDelete={onDelete ? () => { onDelete(); setIsSelected(false); } : () => {}}
                     onClose={() => setIsSelected(false)}
                     anchorRect={anchorRect}
                 />

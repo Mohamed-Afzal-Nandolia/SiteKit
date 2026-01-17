@@ -28,9 +28,9 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
     const { isEditMode } = useEditor();
     
     const {
-        headline = "Build your dream website",
+        headline,
         headlineStyles = {},
-        subheadline = "The fastest way to create stunning websites without writing code.",
+        subheadline,
         subheadlineStyles = {},
         primaryCta,
         primaryCtaStyles = {},
@@ -129,26 +129,32 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
             </div>
 
             <div className={`relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col ${alignClass}`}>
-                <EditableText
-                    value={headline}
-                    onUpdate={(newValue) => updateConfig({ headline: newValue })}
-                    styles={headlineStyles}
-                    onStyleUpdate={(newStyles) => updateConfig({ headlineStyles: newStyles })}
-                    as="h1"
-                    className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight text-balance mb-6"
-                    placeholder="Enter headline..."
-                />
+                {headline && (
+                    <EditableText
+                        value={headline}
+                        onUpdate={(newValue) => updateConfig({ headline: newValue })}
+                        styles={headlineStyles}
+                        onStyleUpdate={(newStyles) => updateConfig({ headlineStyles: newStyles })}
+                        onDelete={() => updateConfig({ headline: undefined })}
+                        as="h1"
+                        className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight text-balance mb-6"
+                        placeholder="Enter headline..."
+                    />
+                )}
                 
-                <EditableText
-                    value={subheadline}
-                    onUpdate={(newValue) => updateConfig({ subheadline: newValue })}
-                    styles={subheadlineStyles}
-                    onStyleUpdate={(newStyles) => updateConfig({ subheadlineStyles: newStyles })}
-                    as="p"
-                    className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 text-balance"
-                    placeholder="Enter subheadline..."
-                    multiline
-                />
+                {subheadline && (
+                    <EditableText
+                        value={subheadline}
+                        onUpdate={(newValue) => updateConfig({ subheadline: newValue })}
+                        styles={subheadlineStyles}
+                        onStyleUpdate={(newStyles) => updateConfig({ subheadlineStyles: newStyles })}
+                        onDelete={() => updateConfig({ subheadline: undefined })}
+                        as="p"
+                        className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 text-balance"
+                        placeholder="Enter subheadline..."
+                        multiline
+                    />
+                )}
 
                 <div className="flex flex-wrap gap-4">
                     {primaryCta && (
@@ -159,6 +165,7 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
                                 onUpdate={updatePrimaryCta}
                                 styles={primaryCtaStyles}
                                 onStyleUpdate={(newStyles) => updateConfig({ primaryCtaStyles: newStyles })}
+                                onDelete={() => updateConfig({ primaryCta: undefined })}
                                 className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5"
                             />
                         ) : (
@@ -178,6 +185,7 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
                                 onUpdate={updateSecondaryCta}
                                 styles={secondaryCtaStyles}
                                 onStyleUpdate={(newStyles) => updateConfig({ secondaryCtaStyles: newStyles })}
+                                onDelete={() => updateConfig({ secondaryCta: undefined })}
                                 className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
                             />
                         ) : (

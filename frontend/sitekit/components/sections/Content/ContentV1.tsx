@@ -29,7 +29,7 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
     const { isEditMode } = useEditor();
     
     const {
-        title = "Features",
+        title,
         titleStyles = {},
         description,
         descriptionStyles = {},
@@ -71,21 +71,25 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
         <section className="py-20 bg-white dark:bg-slate-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <EditableText
-                        value={title}
-                        onUpdate={(newValue) => updateConfig({ title: newValue })}
-                        styles={titleStyles}
-                        onStyleUpdate={(newStyles) => updateConfig({ titleStyles: newStyles })}
-                        as="h2"
-                        className="text-3xl font-bold text-slate-900 dark:text-white mb-4"
-                        placeholder="Section Title"
-                    />
+                    {title && (
+                        <EditableText
+                            value={title}
+                            onUpdate={(newValue) => updateConfig({ title: newValue })}
+                            styles={titleStyles}
+                            onStyleUpdate={(newStyles) => updateConfig({ titleStyles: newStyles })}
+                            onDelete={() => updateConfig({ title: undefined })}
+                            as="h2"
+                            className="text-3xl font-bold text-slate-900 dark:text-white mb-4"
+                            placeholder="Section Title"
+                        />
+                    )}
                     {(description || isEditMode) && (
                         <EditableText
                             value={description || ""}
                             onUpdate={(newValue) => updateConfig({ description: newValue })}
                             styles={descriptionStyles}
                             onStyleUpdate={(newStyles) => updateConfig({ descriptionStyles: newStyles })}
+                            onDelete={() => updateConfig({ description: undefined })}
                             as="p"
                             className="text-lg text-slate-600 dark:text-slate-400"
                             placeholder="Section description..."
@@ -109,6 +113,10 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
                                 onUpdate={(newValue) => updateFeature(idx, { title: newValue })}
                                 styles={featureTitleStyles[idx]}
                                 onStyleUpdate={(newStyles) => updateFeatureTitleStyles(idx, newStyles)}
+                                onDelete={() => {
+                                    const updatedFeatures = features.filter((_, i) => i !== idx);
+                                    updateConfig({ features: updatedFeatures });
+                                }}
                                 as="h3"
                                 className="text-xl font-semibold text-slate-900 dark:text-white mb-3"
                                 placeholder="Feature title"
@@ -118,6 +126,7 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
                                 onUpdate={(newValue) => updateFeature(idx, { description: newValue })}
                                 styles={featureDescriptionStyles[idx]}
                                 onStyleUpdate={(newStyles) => updateFeatureDescriptionStyles(idx, newStyles)}
+                                onDelete={() => updateFeature(idx, { description: undefined })}
                                 as="p"
                                 className="text-slate-600 dark:text-slate-400"
                                 placeholder="Feature description..."
