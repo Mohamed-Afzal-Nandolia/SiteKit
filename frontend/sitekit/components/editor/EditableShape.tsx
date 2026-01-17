@@ -18,8 +18,21 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
     const [resizeHandle, setResizeHandle] = useState<string | null>(null);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0, shapeX: 0, shapeY: 0 });
     const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, centerX: 0, centerY: 0 });
+    
+    // Local state for smooth dragging/resizing (only update parent on mouse up)
+    const [localPosition, setLocalPosition] = useState({ x: shape.x, y: shape.y });
+    const [localSize, setLocalSize] = useState({ width: shape.width, height: shape.height });
+    
     const shapeRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Sync local state when shape prop changes
+    useEffect(() => {
+        if (!isDragging && !isResizing) {
+            setLocalPosition({ x: shape.x, y: shape.y });
+            setLocalSize({ width: shape.width, height: shape.height });
+        }
+    }, [shape.x, shape.y, shape.width, shape.height, isDragging, isResizing]);
 
     const handleClick = (e: React.MouseEvent) => {
         if (isEditMode && !isDragging && !isResizing) {
@@ -85,7 +98,8 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
                 const newX = Math.max(0, Math.min(100, dragStart.shapeX + deltaXPercent));
                 const newY = Math.max(0, Math.min(100, dragStart.shapeY + deltaYPercent));
                 
-                onUpdate({ x: newX, y: newY });
+                // Update local state only (no parent re-render)
+                setLocalPosition({ x: newX, y: newY });
             } else if (isResizing && resizeHandle) {
                 const deltaX = e.clientX - resizeStart.x;
                 const deltaY = e.clientY - resizeStart.y;
@@ -114,7 +128,8 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
                     newHeight = avgSize;
                 }
                 
-                onUpdate({ 
+                // Update local state only (no parent re-render)
+                setLocalSize({ 
                     width: Math.round(newWidth), 
                     height: Math.round(newHeight)
                 });
@@ -122,6 +137,14 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
         };
 
         const handleMouseUp = () => {
+            // On mouse up, update parent with final values
+            if (isDragging) {
+                onUpdate({ x: localPosition.x, y: localPosition.y });
+            }
+            if (isResizing) {
+                onUpdate({ width: localSize.width, height: localSize.height });
+            }
+            
             setIsDragging(false);
             setIsResizing(false);
             setResizeHandle(null);
@@ -135,7 +158,7 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
                 document.removeEventListener('mouseup', handleMouseUp);
             };
         }
-    }, [isDragging, isResizing, dragStart, resizeStart, shape, onUpdate, resizeHandle]);
+    }, [isDragging, isResizing, dragStart, resizeStart, shape, onUpdate, resizeHandle, localPosition, localSize]);
 
     // Click outside to deselect
     useEffect(() => {
@@ -154,11 +177,11 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
 
     const shapeStyle: React.CSSProperties = {
         position: 'absolute',
-        left: `${shape.x}%`,
-        top: `${shape.y}%`,
+        left: `${localPosition.x}%`,
+        top: `${localPosition.y}%`,
         transform: 'translate(-50%, -50%)',
-        width: `${shape.width}px`,
-        height: `${shape.height}px`,
+        width: `${localSize.width}px`,
+        height: `${localSize.height}px`,
         backgroundColor: shape.color,
         opacity: shape.opacity,
         filter: shape.blur > 0 ? `blur(${shape.blur}px)` : 'none',
@@ -166,6 +189,7 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
         zIndex: isEditMode ? (isSelected ? 50 : 10) : shape.zIndex,
         pointerEvents: isEditMode ? 'auto' : 'none',
         cursor: isDragging ? 'grabbing' : (isSelected ? 'grab' : 'pointer'),
+        transition: isDragging || isResizing ? 'none' : 'all 0.15s ease-out',
     };
 
     if (!isEditMode) {
