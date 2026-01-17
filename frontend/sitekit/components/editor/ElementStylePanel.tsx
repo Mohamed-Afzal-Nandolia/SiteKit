@@ -587,6 +587,23 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                     />
                                 </div>
                             </div>
+
+                            {/* Border Radius */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">
+                                    Corner Radius: {element.borderRadius ?? 8}px
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="50"
+                                    value={element.borderRadius ?? 8}
+                                    onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
+                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                />
+                            </div>
+
+                            {/* Open in New Tab */}
                             <div className="mt-4">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
