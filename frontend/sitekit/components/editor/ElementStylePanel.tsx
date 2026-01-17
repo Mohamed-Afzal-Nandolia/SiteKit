@@ -296,10 +296,11 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                             <div>
                                 <label className="block text-xs text-slate-400 mb-2">Text Color</label>
                                 <div className="flex items-center gap-2 mb-2">
-                                    <button
-                                        onClick={() => setShowTextColorPicker(!showTextColorPicker)}
-                                        className="w-10 h-10 rounded-lg border-2 border-slate-600"
-                                        style={{ backgroundColor: element.textColor }}
+                                    <input
+                                        type="color"
+                                        value={element.textColor}
+                                        onChange={(e) => onUpdate({ textColor: e.target.value })}
+                                        className="w-12 h-10 rounded border border-slate-600 cursor-pointer"
                                     />
                                     <input
                                         type="text"
@@ -307,6 +308,16 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                         onChange={(e) => onUpdate({ textColor: e.target.value })}
                                         className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm font-mono"
                                     />
+                                    <button
+                                        onClick={() => setShowTextColorPicker(!showTextColorPicker)}
+                                        className="px-2 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs transition-colors"
+                                        title="Show presets"
+                                    >
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                                        </svg>
+                                    </button>
                                 </div>
                                 {showTextColorPicker && (
                                     <div className="grid grid-cols-7 gap-2 p-2 bg-slate-700 rounded-lg">
@@ -326,16 +337,11 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                             <div>
                                 <label className="block text-xs text-slate-400 mb-2">Background</label>
                                 <div className="flex items-center gap-2 mb-2">
-                                    <button
-                                        onClick={() => setShowBgColorPicker(!showBgColorPicker)}
-                                        className="w-10 h-10 rounded-lg border-2 border-slate-600"
-                                        style={{ 
-                                            backgroundColor: element.backgroundColor === "transparent" ? "transparent" : element.backgroundColor,
-                                            backgroundImage: element.backgroundColor === "transparent" 
-                                                ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)"
-                                                : "none",
-                                            backgroundSize: "8px 8px",
-                                        }}
+                                    <input
+                                        type="color"
+                                        value={element.backgroundColor === "transparent" ? "#ffffff" : element.backgroundColor}
+                                        onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
+                                        className="w-12 h-10 rounded border border-slate-600 cursor-pointer"
                                     />
                                     <input
                                         type="text"
@@ -343,6 +349,16 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                         onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
                                         className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm font-mono"
                                     />
+                                    <button
+                                        onClick={() => setShowBgColorPicker(!showBgColorPicker)}
+                                        className="px-2 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs transition-colors"
+                                        title="Show presets"
+                                    >
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                                        </svg>
+                                    </button>
                                 </div>
                                 {showBgColorPicker && (
                                     <div className="p-2 bg-slate-700 rounded-lg">
@@ -375,16 +391,29 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                         {/* Outline Color */}
                                         <div>
                                             <label className="block text-[10px] text-slate-500 mb-1">Color</label>
-                                            <div className="relative">
+                                            <div className="flex gap-1">
+                                                <input
+                                                    type="color"
+                                                    value={element.textStrokeColor || "#000000"}
+                                                    onChange={(e) => {
+                                                        const updates: Partial<SectionElement> = { textStrokeColor: e.target.value };
+                                                        if (!element.textStrokeWidth) {
+                                                            updates.textStrokeWidth = 1;
+                                                        }
+                                                        onUpdate(updates);
+                                                    }}
+                                                    className="w-10 h-8 rounded border border-slate-600 cursor-pointer"
+                                                />
                                                 <button
                                                     onClick={() => setShowTextStrokeColorPicker(!showTextStrokeColorPicker)}
-                                                    className="w-full h-8 rounded border border-slate-600 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 transition-colors"
+                                                    className="flex-1 h-8 rounded border border-slate-600 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 transition-colors"
                                                 >
                                                     <div 
                                                         className="w-4 h-4 rounded-sm border border-slate-500"
                                                         style={{ backgroundColor: element.textStrokeColor || "#000" }}
                                                     />
                                                 </button>
+                                            </div>
                                                 
                                                 {showTextStrokeColorPicker && (
                                                     <div className="absolute top-full left-0 mt-2 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 w-48">
@@ -408,7 +437,6 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                                         </div>
                                                     </div>
                                                 )}
-                                            </div>
                                         </div>
                                         
                                         {/* Outline Width */}
