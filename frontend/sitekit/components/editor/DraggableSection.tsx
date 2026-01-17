@@ -43,12 +43,14 @@ export function DraggableSection({ section, children }: DraggableSectionProps) {
         disabled: !isEditMode,
     });
 
+    const isHeader = section.sectionType === "HEADER";
+
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
         position: "relative" as const,
-        zIndex: isDragging ? 100 : 1,
+        zIndex: isDragging ? 100 : (isHeader ? 50 : 1),
     };
 
     if (!isEditMode) {
