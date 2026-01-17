@@ -63,12 +63,13 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
             id: `shape-${Date.now()}`,
             type: 'circle',
             x: 50,
-            y: 20,
-            width: 600,
-            height: 600,
+            y: 30,
+            width: 200,
+            height: 200,
             color: '#3b82f6',
-            opacity: 0.1,
-            blur: 100,
+            opacity: 1.0,
+            blur: 0,
+            borderRadius: 9999, // Fully rounded for circle
             zIndex: 0,
         };
         updateConfig({ decorativeShapes: [...decorativeShapes, newShape] });

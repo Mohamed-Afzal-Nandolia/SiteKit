@@ -9,5 +9,6 @@ export interface DecorativeShape {
     color: string; // hex color
     opacity: number; // 0-1
     blur: number; // blur amount in pixels
+    borderRadius: number; // border radius in pixels (0-500)
     zIndex: number; // layer order
 }

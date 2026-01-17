@@ -13,14 +13,129 @@ interface EditableShapeProps {
 export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps) {
     const { isEditMode } = useEditor();
     const [isSelected, setIsSelected] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0, shapeX: 0, shapeY: 0 });
+    const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, centerX: 0, centerY: 0 });
     const shapeRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const handleClick = (e: React.MouseEvent) => {
-        if (isEditMode) {
+        if (isEditMode && !isDragging && !isResizing) {
             e.stopPropagation();
             setIsSelected(true);
         }
     };
+
+    // Mouse down on shape body (for dragging)
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!isEditMode || !isSelected) return;
+        
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const container = shapeRef.current?.parentElement;
+        if (!container) return;
+
+        const rect = container.getBoundingClientRect();
+        setIsDragging(true);
+        setDragStart({
+            x: e.clientX,
+            y: e.clientY,
+            shapeX: shape.x,
+            shapeY: shape.y
+        });
+    };
+
+    // Mouse down on resize handle
+    const handleResizeMouseDown = (e: React.MouseEvent, handle: string) => {
+        if (!isEditMode) return;
+        
+        e.stopPropagation();
+        e.preventDefault();
+        
+        setIsResizing(true);
+        setResizeHandle(handle);
+        setResizeStart({
+            x: e.clientX,
+            y: e.clientY,
+            width: shape.width,
+            height: shape.height,
+            centerX: shape.x,
+            centerY: shape.y
+        });
+    };
+
+    // Mouse move (handle both drag and resize)
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            const container = shapeRef.current?.parentElement;
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+
+            if (isDragging) {
+                const deltaX = e.clientX - dragStart.x;
+                const deltaY = e.clientY - dragStart.y;
+                
+                // Convert pixel delta to percentage
+                const deltaXPercent = (deltaX / rect.width) * 100;
+                const deltaYPercent = (deltaY / rect.height) * 100;
+                
+                const newX = Math.max(0, Math.min(100, dragStart.shapeX + deltaXPercent));
+                const newY = Math.max(0, Math.min(100, dragStart.shapeY + deltaYPercent));
+                
+                onUpdate({ x: newX, y: newY });
+            } else if (isResizing && resizeHandle) {
+                const deltaX = e.clientX - resizeStart.x;
+                const deltaY = e.clientY - resizeStart.y;
+                
+                let newWidth = resizeStart.width;
+                let newHeight = resizeStart.height;
+                
+                // Calculate new dimensions based on resize handle
+                if (resizeHandle.includes('e')) {
+                    newWidth = Math.max(50, resizeStart.width + deltaX * 2);
+                }
+                if (resizeHandle.includes('w')) {
+                    newWidth = Math.max(50, resizeStart.width - deltaX * 2);
+                }
+                if (resizeHandle.includes('s')) {
+                    newHeight = Math.max(50, resizeStart.height + deltaY * 2);
+                }
+                if (resizeHandle.includes('n')) {
+                    newHeight = Math.max(50, resizeStart.height - deltaY * 2);
+                }
+                
+                // For circle, keep width and height equal
+                if (shape.type === 'circle') {
+                    const avgSize = (newWidth + newHeight) / 2;
+                    newWidth = avgSize;
+                    newHeight = avgSize;
+                }
+                
+                onUpdate({ 
+                    width: Math.round(newWidth), 
+                    height: Math.round(newHeight)
+                });
+            }
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(false);
+            setIsResizing(false);
+            setResizeHandle(null);
+        };
+
+        if (isDragging || isResizing) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [isDragging, isResizing, dragStart, resizeStart, shape, onUpdate, resizeHandle]);
 
     // Click outside to deselect
     useEffect(() => {
@@ -37,37 +152,25 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
         }
     }, [isSelected]);
 
-    // Get shape-specific styles
-    const getShapeClass = () => {
-        switch (shape.type) {
-            case 'circle':
-                return 'rounded-full';
-            case 'rounded-rectangle':
-                return 'rounded-3xl';
-            case 'rectangle':
-            default:
-                return '';
-        }
-    };
-
     const shapeStyle: React.CSSProperties = {
         position: 'absolute',
         left: `${shape.x}%`,
         top: `${shape.y}%`,
-        transform: 'translate(-50%, -50%)', // Center on position
+        transform: 'translate(-50%, -50%)',
         width: `${shape.width}px`,
         height: `${shape.height}px`,
         backgroundColor: shape.color,
         opacity: shape.opacity,
         filter: shape.blur > 0 ? `blur(${shape.blur}px)` : 'none',
+        borderRadius: `${shape.borderRadius ?? 0}px`,
         zIndex: isEditMode ? (isSelected ? 50 : 10) : shape.zIndex,
         pointerEvents: isEditMode ? 'auto' : 'none',
+        cursor: isDragging ? 'grabbing' : (isSelected ? 'grab' : 'pointer'),
     };
 
     if (!isEditMode) {
         return (
             <div
-                className={getShapeClass()}
                 style={shapeStyle}
             />
         );
@@ -77,10 +180,61 @@ export function EditableShape({ shape, onUpdate, onDelete }: EditableShapeProps)
         <>
             <div
                 ref={shapeRef}
-                className={`${getShapeClass()} ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''} ${isEditMode ? 'hover:ring-2 hover:ring-blue-400/50' : ''} cursor-pointer transition-all`}
+                className={`${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''} ${isEditMode && !isSelected ? 'hover:ring-2 hover:ring-blue-400/50' : ''} transition-all`}
                 style={shapeStyle}
                 onClick={handleClick}
-            />
+                onMouseDown={handleMouseDown}
+            >
+                {/* Resize Handles - only show when selected */}
+                {isSelected && (
+                    <>
+                        {/* Corner handles */}
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'nw')}
+                            className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'ne')}
+                            className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'sw')}
+                            className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'se')}
+                            className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-se-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                        
+                        {/* Edge handles */}
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'n')}
+                            className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-n-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 's')}
+                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-s-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'w')}
+                            className="absolute top-1/2 -translate-y-1/2 -left-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-w-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                        <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'e')}
+                            className="absolute top-1/2 -translate-y-1/2 -right-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-e-resize hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'auto' }}
+                        />
+                    </>
+                )}
+            </div>
+            
             {isSelected && (
                 <ShapePropertiesPanel
                     shape={shape}
@@ -133,6 +287,10 @@ function ShapePropertiesPanel({ shape, onUpdate, onDelete, onClose }: ShapePrope
 
             {/* Content */}
             <div className="p-4 space-y-4">
+                <div className="text-xs text-slate-400 bg-slate-700/50 p-2 rounded">
+                    💡 Tip: Drag to move • Drag corners to resize
+                </div>
+
                 {/* Shape Type */}
                 <div>
                     <label className="block text-xs text-slate-400 mb-2">Shape Type</label>
@@ -224,27 +382,42 @@ function ShapePropertiesPanel({ shape, onUpdate, onDelete, onClose }: ShapePrope
                     />
                 </div>
 
+                {/* Border Radius */}
+                <div>
+                    <label className="block text-xs text-slate-400 mb-1">Corner Radius: {shape.borderRadius ?? 0}px</label>
+                    <input
+                        type="range"
+                        min="0"
+                        max="500"
+                        value={shape.borderRadius ?? 0}
+                        onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
+                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                </div>
+
                 {/* Position */}
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs text-slate-400 mb-1">X Position: {shape.x}%</label>
+                        <label className="block text-xs text-slate-400 mb-1">X Position: {shape.x.toFixed(1)}%</label>
                         <input
                             type="range"
                             min="0"
                             max="100"
+                            step="0.1"
                             value={shape.x}
-                            onChange={(e) => onUpdate({ x: parseInt(e.target.value) })}
+                            onChange={(e) => onUpdate({ x: parseFloat(e.target.value) })}
                             className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs text-slate-400 mb-1">Y Position: {shape.y}%</label>
+                        <label className="block text-xs text-slate-400 mb-1">Y Position: {shape.y.toFixed(1)}%</label>
                         <input
                             type="range"
                             min="0"
                             max="100"
+                            step="0.1"
                             value={shape.y}
-                            onChange={(e) => onUpdate({ y: parseInt(e.target.value) })}
+                            onChange={(e) => onUpdate({ y: parseFloat(e.target.value) })}
                             className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                         />
                     </div>
