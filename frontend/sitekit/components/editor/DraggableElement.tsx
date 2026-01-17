@@ -26,6 +26,8 @@ export function DraggableElement({
     const contentRef = useRef<HTMLDivElement>(null);
     const dragStartPos = useRef({ x: 0, y: 0, elementX: 0, elementY: 0 });
 
+    const [guides, setGuides] = useState({ x: false, y: false });
+
     // Handle content editing
     const handleContentBlur = () => {
         setIsEditing(false);
@@ -56,6 +58,7 @@ export function DraggableElement({
         
         setIsDragging(true);
         setIsSelected(true);
+        setGuides({ x: false, y: false });
     };
 
     // Handle dragging
@@ -76,15 +79,34 @@ export function DraggableElement({
             let newX = dragStartPos.current.elementX + deltaX;
             let newY = dragStartPos.current.elementY + deltaY;
             
+            // Snap to center logic
+            const SNAP_THRESHOLD = 1.5; // 1.5% threshold
+            let showGuideX = false;
+            let showGuideY = false;
+
+            // Snap X (Vertical Center Guide)
+            if (Math.abs(newX - 50) < SNAP_THRESHOLD) {
+                newX = 50;
+                showGuideX = true;
+            }
+
+            // Snap Y (Horizontal Center Guide)
+            if (Math.abs(newY - 50) < SNAP_THRESHOLD) {
+                newY = 50;
+                showGuideY = true;
+            }
+
             // Clamp to section bounds (with some padding)
             newX = Math.max(5, Math.min(95, newX));
             newY = Math.max(5, Math.min(95, newY));
             
+            setGuides({ x: showGuideX, y: showGuideY });
             onUpdate(element.id, { x: newX, y: newY });
         };
 
         const handleEnd = () => {
             setIsDragging(false);
+            setGuides({ x: false, y: false });
         };
 
         document.addEventListener("mousemove", handleMove);
@@ -264,6 +286,19 @@ export function DraggableElement({
 
     return (
         <>
+            {/* Alignment Guides */}
+            {guides.x && (
+                <div 
+                    className="absolute top-0 bottom-0 border-l border-pink-500 z-[150] pointer-events-none" 
+                    style={{ left: "50%", transform: "translateX(-50%)" }}
+                />
+            )}
+            {guides.y && (
+                <div 
+                    className="absolute left-0 right-0 border-t border-pink-500 z-[150] pointer-events-none" 
+                    style={{ top: "50%", transform: "translateY(-50%)" }}
+                />
+            )}
             <div
                 ref={elementRef}
                 style={elementStyles}
