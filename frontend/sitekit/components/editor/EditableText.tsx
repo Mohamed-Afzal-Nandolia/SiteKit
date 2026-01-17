@@ -225,6 +225,36 @@ export function EditableText({
         onStyleUpdate(newStyles);
     };
 
+    // Helper functions to get actual computed values from DOM
+    const getComputedFontSize = (): number => {
+        if (styles?.fontSize) {
+            return parseInt(styles.fontSize as string);
+        }
+        if (elementRef.current) {
+            const computed = window.getComputedStyle(elementRef.current);
+            return parseInt(computed.fontSize) || 16;
+        }
+        return 16;
+    };
+
+    const getComputedColor = (): string => {
+        if (styles?.color) return styles.color as string;
+        if (elementRef.current) {
+            const computed = window.getComputedStyle(elementRef.current);
+            return computed.color || "#000000";
+        }
+        return "#000000";
+    };
+
+    const getComputedFontWeight = (): string => {
+        if (styles?.fontWeight) return styles.fontWeight as string;
+        if (elementRef.current) {
+            const computed = window.getComputedStyle(elementRef.current);
+            return computed.fontWeight || "400";
+        }
+        return "400";
+    };
+
     // Construct ephemeral element for panel
     const ephemeralElement: SectionElement = {
         id: id,
@@ -233,10 +263,10 @@ export function EditableText({
         x: 0, 
         y: 0,
         // Map styles to element props
-        textColor: (styles?.color as string) || "#000000",
+        textColor: getComputedColor(),
         backgroundColor: (styles?.backgroundColor as string) || "transparent",
-        fontSize: parseInt((styles?.fontSize as string) || "16"),
-        fontWeight: (styles?.fontWeight as string) || "400",
+        fontSize: getComputedFontSize(),
+        fontWeight: getComputedFontWeight(),
         fontStyle: (styles?.fontStyle as any) || "normal",
         textDecoration: (styles?.textDecoration as any) || "none",
         textAlign: (styles?.textAlign as any) || "left",
@@ -461,6 +491,36 @@ export function EditableLink({
         onStyleUpdate(newStyles);
     };
 
+    // Helper functions to get actual computed values from DOM
+    const getComputedFontSize = (): number => {
+        if (styles?.fontSize) {
+            return parseInt(styles.fontSize as string);
+        }
+        if (textRef.current) {
+            const computed = window.getComputedStyle(textRef.current);
+            return parseInt(computed.fontSize) || 16;
+        }
+        return 16;
+    };
+
+    const getComputedColor = (): string => {
+        if (styles?.color) return styles.color as string;
+        if (textRef.current) {
+            const computed = window.getComputedStyle(textRef.current);
+            return computed.color || "#000000";
+        }
+        return "#000000";
+    };
+
+    const getComputedFontWeight = (): string => {
+        if (styles?.fontWeight) return styles.fontWeight as string;
+        if (textRef.current) {
+            const computed = window.getComputedStyle(textRef.current);
+            return computed.fontWeight || "400";
+        }
+        return "400";
+    };
+
     // Ephemeral button element
     const ephemeralElement: SectionElement = {
         id: "link-btn",
@@ -469,9 +529,9 @@ export function EditableLink({
         x: 0, y: 0,
         href: href,
         backgroundColor: (styles?.backgroundColor as string) || "transparent",
-        textColor: (styles?.color as string) || "inherit",
-        fontSize: parseInt((styles?.fontSize as string) || "16"),
-        fontWeight: (styles?.fontWeight as string) || "400",
+        textColor: getComputedColor(),
+        fontSize: getComputedFontSize(),
+        fontWeight: getComputedFontWeight(),
         borderRadius: parseInt((styles?.borderRadius as string) || "0"),
         paddingX: parseInt((styles?.paddingLeft as string) || "0"),
         paddingY: parseInt((styles?.paddingTop as string) || "0"),
