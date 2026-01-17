@@ -16,9 +16,14 @@ export interface FooterColumn {
 
 export interface FooterV1Config {
     brandName?: string;
+    brandNameStyles?: React.CSSProperties;
     description?: string;
+    descriptionStyles?: React.CSSProperties;
     columns?: FooterColumn[];
+    columnTitleStyles?: React.CSSProperties[];
+    columnLinkStyles?: React.CSSProperties[][];
     copyrightText?: string;
+    copyrightStyles?: React.CSSProperties;
 }
 
 interface FooterV1Props {
@@ -31,9 +36,14 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
     
     const {
         brandName = "SiteKit",
+        brandNameStyles = {},
         description = "Building the web, one block at a time.",
+        descriptionStyles = {},
         columns = [],
-        copyrightText = "© 2024 SiteKit. All rights reserved."
+        columnTitleStyles = [],
+        columnLinkStyles = [],
+        copyrightText = "© 2024 SiteKit. All rights reserved.",
+        copyrightStyles = {}
     } = config || {};
 
     // Helper to update config
@@ -50,6 +60,13 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
         updateConfig({ columns: updatedColumns });
     };
 
+    // Update column title styles
+    const updateColumnTitleStyles = (colIndex: number, newStyles: React.CSSProperties) => {
+        const updatedStyles = [...columnTitleStyles];
+        updatedStyles[colIndex] = newStyles;
+        updateConfig({ columnTitleStyles: updatedStyles });
+    };
+
     // Update column link
     const updateColumnLink = (colIndex: number, linkIndex: number, newLabel: string, newHref: string) => {
         const updatedColumns = [...columns];
@@ -57,6 +74,16 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
         updatedLinks[linkIndex] = { label: newLabel, href: newHref };
         updatedColumns[colIndex] = { ...updatedColumns[colIndex], links: updatedLinks };
         updateConfig({ columns: updatedColumns });
+    };
+
+    // Update column link styles
+    const updateColumnLinkStyles = (colIndex: number, linkIndex: number, newStyles: React.CSSProperties) => {
+        const updatedStyles = [...columnLinkStyles];
+        if (!updatedStyles[colIndex]) {
+            updatedStyles[colIndex] = [];
+        }
+        updatedStyles[colIndex][linkIndex] = newStyles;
+        updateConfig({ columnLinkStyles: updatedStyles });
     };
 
     return (
@@ -68,12 +95,16 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                             <EditableText
                                 value={brandName}
                                 onUpdate={(newValue) => updateConfig({ brandName: newValue })}
+                                styles={brandNameStyles}
+                                onStyleUpdate={(newStyles) => updateConfig({ brandNameStyles: newStyles })}
                                 placeholder="Brand Name"
                             />
                         </div>
                         <EditableText
                             value={description}
                             onUpdate={(newValue) => updateConfig({ description: newValue })}
+                            styles={descriptionStyles}
+                            onStyleUpdate={(newStyles) => updateConfig({ descriptionStyles: newStyles })}
                             as="p"
                             className="text-slate-600 dark:text-slate-400 text-sm"
                             placeholder="Brand description..."
@@ -86,6 +117,8 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                             <EditableText
                                 value={col.title}
                                 onUpdate={(newValue) => updateColumnTitle(idx, newValue)}
+                                styles={columnTitleStyles[idx]}
+                                onStyleUpdate={(newStyles) => updateColumnTitleStyles(idx, newStyles)}
                                 as="h3"
                                 className="font-semibold text-slate-900 dark:text-white mb-4"
                                 placeholder="Column Title"
@@ -98,6 +131,8 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                                                 label={link.label}
                                                 href={link.href}
                                                 onUpdate={(newLabel, newHref) => updateColumnLink(idx, lIdx, newLabel, newHref)}
+                                                styles={columnLinkStyles[idx]?.[lIdx]}
+                                                onStyleUpdate={(newStyles) => updateColumnLinkStyles(idx, lIdx, newStyles)}
                                                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                             />
                                         ) : (
@@ -119,6 +154,8 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                     <EditableText
                         value={copyrightText}
                         onUpdate={(newValue) => updateConfig({ copyrightText: newValue })}
+                        styles={copyrightStyles}
+                        onStyleUpdate={(newStyles) => updateConfig({ copyrightStyles: newStyles })}
                         placeholder="© 2024 Your Company"
                     />
                 </div>

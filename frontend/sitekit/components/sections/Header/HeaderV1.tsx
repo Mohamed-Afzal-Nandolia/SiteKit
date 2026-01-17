@@ -7,8 +7,9 @@ import { EditableText, EditableLink, useEditor } from "@/components/editor";
 export interface HeaderV1Config {
     logoText?: string;
     logoImage?: string;
-    navLinks?: { label: string; href: string }[];
-    actionButton?: { label: string; href: string; variant?: "primary" | "secondary" | "outline" };
+    logoStyles?: React.CSSProperties;
+    navLinks?: { label: string; href: string; styles?: React.CSSProperties }[];
+    actionButton?: { label: string; href: string; variant?: "primary" | "secondary" | "outline"; styles?: React.CSSProperties };
 }
 
 interface HeaderV1Props {
@@ -21,7 +22,8 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
     const { isEditMode } = useEditor();
     
     const { 
-        logoText = "Brand", 
+        logoText = "Brand",
+        logoStyles = {},
         navLinks = [], 
         actionButton 
     } = config || {};
@@ -36,7 +38,20 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
     // Update a specific nav link
     const updateNavLink = (index: number, newLabel: string, newHref: string) => {
         const updatedLinks = [...navLinks];
-        updatedLinks[index] = { label: newLabel, href: newHref };
+        updatedLinks[index] = { ...updatedLinks[index], label: newLabel, href: newHref };
+        updateConfig({ navLinks: updatedLinks });
+    };
+
+    // Update nav link styles
+    const updateNavLinkStyles = (index: number, newStyles: React.CSSProperties) => {
+        const updatedLinks = [...navLinks];
+        updatedLinks[index] = { ...updatedLinks[index], styles: newStyles };
+        updateConfig({ navLinks: updatedLinks });
+    };
+
+    // Delete a nav link
+    const deleteNavLink = (index: number) => {
+        const updatedLinks = navLinks.filter((_, idx) => idx !== index);
         updateConfig({ navLinks: updatedLinks });
     };
 
@@ -57,6 +72,8 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                     <EditableText
                         value={logoText}
                         onUpdate={(newValue) => updateConfig({ logoText: newValue })}
+                        styles={logoStyles}
+                        onStyleUpdate={(newStyles) => updateConfig({ logoStyles: newStyles })}
                         placeholder="Brand Name"
                     />
                 </div>
@@ -70,6 +87,8 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                                 label={link.label}
                                 href={link.href}
                                 onUpdate={(newLabel, newHref) => updateNavLink(idx, newLabel, newHref)}
+                                styles={link.styles}
+                                onStyleUpdate={(newStyles) => updateNavLinkStyles(idx, newStyles)}
                                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             />
                         ) : (
@@ -93,6 +112,8 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                                     label={actionButton.label}
                                     href={actionButton.href}
                                     onUpdate={updateActionButton}
+                                    styles={actionButton.styles}
+                                    onStyleUpdate={(newStyles) => updateConfig({ actionButton: { ...actionButton, styles: newStyles } })}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                         actionButton.variant === "outline" 
                                             ? "border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"

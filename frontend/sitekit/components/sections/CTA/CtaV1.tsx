@@ -6,9 +6,12 @@ import { EditableText, EditableLink, useEditor } from "@/components/editor";
 
 export interface CtaV1Config {
     title?: string;
+    titleStyles?: React.CSSProperties;
     description?: string;
+    descriptionStyles?: React.CSSProperties;
     buttonText?: string;
     buttonLink?: string;
+    buttonStyles?: React.CSSProperties;
 }
 
 interface CtaV1Props {
@@ -21,9 +24,12 @@ export function CtaV1({ config, onConfigChange }: CtaV1Props) {
     
     const {
         title = "Ready to get started?",
+        titleStyles = {},
         description = "Join thousands of users building their websites today.",
+        descriptionStyles = {},
         buttonText = "Start building now",
-        buttonLink = "/signup"
+        buttonLink = "/signup",
+        buttonStyles = {}
     } = config || {};
 
     // Helper to update config
@@ -44,6 +50,8 @@ export function CtaV1({ config, onConfigChange }: CtaV1Props) {
                 <EditableText
                     value={title}
                     onUpdate={(newValue) => updateConfig({ title: newValue })}
+                    styles={titleStyles}
+                    onStyleUpdate={(newStyles) => updateConfig({ titleStyles: newStyles })}
                     as="h2"
                     className="text-3xl md:text-4xl font-bold text-white mb-6"
                     placeholder="CTA Title"
@@ -51,6 +59,8 @@ export function CtaV1({ config, onConfigChange }: CtaV1Props) {
                 <EditableText
                     value={description}
                     onUpdate={(newValue) => updateConfig({ description: newValue })}
+                    styles={descriptionStyles}
+                    onStyleUpdate={(newStyles) => updateConfig({ descriptionStyles: newStyles })}
                     as="p"
                     className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto"
                     placeholder="CTA description..."
@@ -61,6 +71,8 @@ export function CtaV1({ config, onConfigChange }: CtaV1Props) {
                         label={buttonText}
                         href={buttonLink}
                         onUpdate={updateButton}
+                        styles={buttonStyles}
+                        onStyleUpdate={(newStyles) => updateConfig({ buttonStyles: newStyles })}
                         className="inline-block px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:bg-blue-50 transition-colors shadow-xl"
                     />
                 ) : (

@@ -340,10 +340,17 @@ export function EditableLink({
     const { isEditMode } = useEditor();
     const [isEditingHref, setIsEditingHref] = useState(false);
     const [localHref, setLocalHref] = useState(href);
+    const [isEditingText, setIsEditingText] = useState(false);
+    const [localLabel, setLocalLabel] = useState(label);
+    const textRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         setLocalHref(href);
     }, [href]);
+
+    useEffect(() => {
+        setLocalLabel(label);
+    }, [label]);
 
     const handleLabelUpdate = (newLabel: string) => {
         onUpdate(newLabel, localHref);
@@ -356,7 +363,7 @@ export function EditableLink({
             const newHref = window.prompt("Edit link URL:", localHref);
             if (newHref !== null) {
                 setLocalHref(newHref);
-                onUpdate(label, newHref);
+                onUpdate(localLabel, newHref);
             }
         }
     };
@@ -378,10 +385,53 @@ export function EditableLink({
     const [anchorRect, setAnchorRect] = useState<any>(undefined);
 
     const handleClick = (e: React.MouseEvent) => {
-        if (isEditMode) {
+        if (isEditMode && !isEditingText) {
             e.preventDefault();
             e.stopPropagation();
             setIsSelected(true);
+        }
+    };
+
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        if (isEditMode) {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsEditingText(true);
+            setIsSelected(false);
+            setTimeout(() => {
+                if (textRef.current) {
+                    textRef.current.focus();
+                    const range = document.createRange();
+                    const selection = window.getSelection();
+                    range.selectNodeContents(textRef.current);
+                    selection?.removeAllRanges();
+                    selection?.addRange(range);
+                }
+            }, 0);
+        }
+    };
+
+    const handleTextBlur = () => {
+        setIsEditingText(false);
+        if (textRef.current) {
+            const newText = textRef.current.innerText;
+            if (newText !== localLabel) {
+                setLocalLabel(newText);
+                onUpdate(newText, localHref);
+            }
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            textRef.current?.blur();
+        } else if (e.key === "Escape") {
+            if (textRef.current) {
+                textRef.current.innerText = localLabel;
+            }
+            setIsEditingText(false);
+            textRef.current?.blur();
         }
     };
     
@@ -415,16 +465,16 @@ export function EditableLink({
     const ephemeralElement: SectionElement = {
         id: "link-btn",
         type: "button",
-        content: label,
+        content: localLabel,
         x: 0, y: 0,
         href: href,
-        backgroundColor: (styles?.backgroundColor as string) || "#2563eb",
-        textColor: (styles?.color as string) || "#ffffff",
+        backgroundColor: (styles?.backgroundColor as string) || "transparent",
+        textColor: (styles?.color as string) || "inherit",
         fontSize: parseInt((styles?.fontSize as string) || "16"),
-        fontWeight: (styles?.fontWeight as string) || "600",
-        borderRadius: parseInt((styles?.borderRadius as string) || "8"),
-        paddingX: parseInt((styles?.paddingLeft as string) || "24"),
-        paddingY: parseInt((styles?.paddingTop as string) || "12"),
+        fontWeight: (styles?.fontWeight as string) || "400",
+        borderRadius: parseInt((styles?.borderRadius as string) || "0"),
+        paddingX: parseInt((styles?.paddingLeft as string) || "0"),
+        paddingY: parseInt((styles?.paddingTop as string) || "0"),
         borderWidth: parseInt((styles?.borderWidth as string) || "0"),
         borderColor: (styles?.borderColor as string) || "transparent",
         // Default text styles for button
@@ -445,11 +495,11 @@ export function EditableLink({
              if (target.closest('[data-style-panel="true"]')) return;
              setIsSelected(false);
         };
-        if (isSelected) {
+        if (isSelected && !isEditingText) {
             setTimeout(() => document.addEventListener("mousedown", handleClickOutside), 100);
             return () => document.removeEventListener("mousedown", handleClickOutside);
         }
-    }, [isSelected]);
+    }, [isSelected, isEditingText]);
     
     // Anchor update
     useEffect(() => {
@@ -469,28 +519,68 @@ export function EditableLink({
         }
     }, [isSelected, JSON.stringify(styles)]);
 
+    // Separate text styles from layout/wrapper styles
+    const textStyles: React.CSSProperties = {
+        color: styles?.color,
+        fontSize: styles?.fontSize,
+        fontWeight: styles?.fontWeight,
+        fontFamily: styles?.fontFamily,
+        fontStyle: styles?.fontStyle,
+        textDecoration: styles?.textDecoration,
+        textTransform: styles?.textTransform,
+        letterSpacing: styles?.letterSpacing,
+        lineHeight: styles?.lineHeight,
+    };
+
+    const wrapperStyles: React.CSSProperties = {
+        backgroundColor: styles?.backgroundColor,
+        padding: styles?.padding,
+        paddingLeft: styles?.paddingLeft,
+        paddingRight: styles?.paddingRight,
+        paddingTop: styles?.paddingTop,
+        paddingBottom: styles?.paddingBottom,
+        borderRadius: styles?.borderRadius,
+        borderWidth: styles?.borderWidth,
+        borderColor: styles?.borderColor,
+        borderStyle: styles?.borderStyle,
+        margin: styles?.margin,
+        display: 'inline-block',
+    };
+
     return (
         <span
-            ref={elementRef}
+            ref={elementRef as any}
             onClick={handleClick}
+            onDoubleClick={handleDoubleClick}
             onContextMenu={handleContextMenu}
-            className={`relative group inline-block ${isSelected ? "ring-2 ring-blue-500 ring-offset-2 rounded" : ""}`}
-            style={styles} 
+            className={`relative group ${isSelected && !isEditingText ? "ring-2 ring-blue-500 ring-offset-2 rounded" : ""} ${isEditMode && !isEditingText ? "hover:ring-2 hover:ring-blue-400/50 hover:ring-offset-1 rounded" : ""} ${isEditingText ? "ring-2 ring-blue-500 ring-offset-2 rounded" : ""}`}
+            style={wrapperStyles} 
         >
-            <EditableText
-                value={label}
-                onUpdate={handleLabelUpdate}
+            <span 
+                ref={textRef}
+                contentEditable={isEditingText}
+                suppressContentEditableWarning={true}
+                onBlur={handleTextBlur}
+                onKeyDown={handleKeyDown}
                 className={className}
-                // We don't pass styles to inner text because the wrapper handles button styles
-                // But we suppress the inner text selection if parent is selected as button?
-                // Actually, inner text edit is fine.
-            />
-            {/* URL indicator on hover in edit mode */}
-            <span className="absolute -bottom-6 left-0 text-xs bg-slate-800 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                🔗 Right-click to edit URL
+                style={{ 
+                    ...textStyles,
+                    pointerEvents: isEditingText ? 'auto' : 'none', 
+                    display: 'inline-block',
+                    outline: 'none',
+                    cursor: 'pointer'
+                }}
+            >
+                {localLabel}
             </span>
+            {/* URL indicator on hover in edit mode */}
+            {!isEditingText && (
+                <span className="absolute -bottom-6 left-0 text-xs bg-slate-800 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                    🔗 Right-click to edit URL | Double-click to edit text
+                </span>
+            )}
 
-            {isSelected && onStyleUpdate && (
+            {isSelected && !isEditingText && onStyleUpdate && (
                 <ElementStylePanel 
                     element={ephemeralElement}
                     onUpdate={handleStyleUpdate}

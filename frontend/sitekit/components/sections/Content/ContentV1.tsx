@@ -11,8 +11,12 @@ export interface FeatureItem {
 
 export interface ContentV1Config {
     title?: string;
+    titleStyles?: React.CSSProperties;
     description?: string;
+    descriptionStyles?: React.CSSProperties;
     features?: FeatureItem[];
+    featureTitleStyles?: React.CSSProperties[];
+    featureDescriptionStyles?: React.CSSProperties[];
     layout?: "grid" | "alternating";
 }
 
@@ -26,8 +30,12 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
     
     const {
         title = "Features",
+        titleStyles = {},
         description,
+        descriptionStyles = {},
         features = [],
+        featureTitleStyles = [],
+        featureDescriptionStyles = [],
         layout = "grid"
     } = config || {};
 
@@ -45,6 +53,20 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
         updateConfig({ features: updatedFeatures });
     };
 
+    // Update feature title styles
+    const updateFeatureTitleStyles = (index: number, newStyles: React.CSSProperties) => {
+        const updatedStyles = [...featureTitleStyles];
+        updatedStyles[index] = newStyles;
+        updateConfig({ featureTitleStyles: updatedStyles });
+    };
+
+    // Update feature description styles
+    const updateFeatureDescriptionStyles = (index: number, newStyles: React.CSSProperties) => {
+        const updatedStyles = [...featureDescriptionStyles];
+        updatedStyles[index] = newStyles;
+        updateConfig({ featureDescriptionStyles: updatedStyles });
+    };
+
     return (
         <section className="py-20 bg-white dark:bg-slate-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -52,6 +74,8 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
                     <EditableText
                         value={title}
                         onUpdate={(newValue) => updateConfig({ title: newValue })}
+                        styles={titleStyles}
+                        onStyleUpdate={(newStyles) => updateConfig({ titleStyles: newStyles })}
                         as="h2"
                         className="text-3xl font-bold text-slate-900 dark:text-white mb-4"
                         placeholder="Section Title"
@@ -60,6 +84,8 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
                         <EditableText
                             value={description || ""}
                             onUpdate={(newValue) => updateConfig({ description: newValue })}
+                            styles={descriptionStyles}
+                            onStyleUpdate={(newStyles) => updateConfig({ descriptionStyles: newStyles })}
                             as="p"
                             className="text-lg text-slate-600 dark:text-slate-400"
                             placeholder="Section description..."
@@ -81,6 +107,8 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
                             <EditableText
                                 value={feature.title}
                                 onUpdate={(newValue) => updateFeature(idx, { title: newValue })}
+                                styles={featureTitleStyles[idx]}
+                                onStyleUpdate={(newStyles) => updateFeatureTitleStyles(idx, newStyles)}
                                 as="h3"
                                 className="text-xl font-semibold text-slate-900 dark:text-white mb-3"
                                 placeholder="Feature title"
@@ -88,6 +116,8 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
                             <EditableText
                                 value={feature.description}
                                 onUpdate={(newValue) => updateFeature(idx, { description: newValue })}
+                                styles={featureDescriptionStyles[idx]}
+                                onStyleUpdate={(newStyles) => updateFeatureDescriptionStyles(idx, newStyles)}
                                 as="p"
                                 className="text-slate-600 dark:text-slate-400"
                                 placeholder="Feature description..."
