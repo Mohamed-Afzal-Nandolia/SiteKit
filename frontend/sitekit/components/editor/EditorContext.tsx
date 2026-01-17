@@ -35,7 +35,7 @@ interface EditorContextState {
     hasReorderChanges: boolean;
     
     // Add a new section locally (with negative temp ID)
-    addSection: (sectionType: any, variant: string, pageId: number, position?: number) => void;
+    addSection: (sectionType: any, variant: string, pageId: number, position?: number, config?: Record<string, unknown>) => void;
 
     // Check if there are any pending changes (config updates, deletions, reorders, or additions)
     hasPendingChanges: boolean;
@@ -121,7 +121,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Add a new section locally
-    const addSection = useCallback((sectionType: any, variant: string, pageId: number, position?: number) => {
+    const addSection = useCallback((sectionType: any, variant: string, pageId: number, position?: number, config: Record<string, unknown> = {}) => {
         const tempId = -Date.now(); // Negative ID for temp sections
         
         const newSection: PageSectionDTO = {
@@ -129,8 +129,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             pageId,
             sectionType,
             variant,
-            config: {},
-            configJson: "{}",
+            config: config,
+            configJson: JSON.stringify(config),
             position: position || 0,
         };
 

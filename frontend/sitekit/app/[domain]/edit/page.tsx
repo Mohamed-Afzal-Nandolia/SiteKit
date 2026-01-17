@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAllSites, getPagesBySite, getSections, getUserFromToken, deleteSection, reorderSections } from "@/api";
+import { getAllSites, getPagesBySite, getSections, getUserFromToken, deleteSection, reorderSections, createPage } from "@/api";
 import { SectionRenderer } from "@/components/renderer/SectionRenderer";
 import { EditorProvider, useEditor, SectionWrapper, AddSectionButton, SectionPicker, SortableSectionList } from "@/components/editor";
 import type { SiteDTO, PageDTO, PageSectionDTO, SectionType } from "@/api";
@@ -69,15 +69,124 @@ function EditorContent({
     const [insertPosition, setInsertPosition] = useState<number>(0);
 
     // Handle add section
-    const handleAddSection = (sectionType: SectionType, variant: string) => {
-        if (!currentPage?.id) return;
-        
-        console.log("Adding section locally:", { sectionType, variant, pageId: currentPage.id, position: insertPosition });
+    const handleAddSection = async (sectionType: SectionType, variant: string) => {
+        console.log("handleAddSection called with:", { sectionType, variant, currentPageId: currentPage?.id });
 
-        addSection(sectionType, variant, currentPage.id, insertPosition);
+        if (!currentPage?.id) {
+            console.error("Missing currentPage.id");
+            setSaveMessage({ type: "error", text: "Error: Page ID not found" });
+            return;
+        }
         
-        setSaveMessage({ type: "success", text: "Section added (Unsaved)" });
-        setTimeout(() => setSaveMessage(null), 2000);
+        // Define default configurations for each section type
+        let defaultConfig: any = {};
+        
+        switch (sectionType) {
+            case "HERO":
+                defaultConfig = {
+                    headline: "Welcome to Your Site",
+                    subheadline: "This is a perfect place to introduce your brand and what you do. Click to edit this text.",
+                    primaryCta: { label: "Get Started", href: "#" },
+                    secondaryCta: { label: "Learn More", href: "#" },
+                    alignment: "center"
+                };
+                break;
+            case "HEADER":
+                defaultConfig = {
+                    logoText: "My Brand",
+                    navLinks: [
+                        { label: "Home", href: "/" },
+                        { label: "About", href: "/about" },
+                        { label: "Contact", href: "/contact" }
+                    ],
+                    actionButton: { label: "Get Started", href: "/signup", variant: "primary" }
+                };
+                break;
+            case "CONTENT":
+                defaultConfig = {
+                    title: "Our Features",
+                    description: "Discover what makes us unique and why you should choose our services.",
+                    layout: "grid",
+                    features: [
+                        { title: "Feature One", description: "Description for feature one. Highlight key benefits here." },
+                        { title: "Feature Two", description: "Description for feature two. Explain how it solves problems." },
+                        { title: "Feature Three", description: "Description for feature three. Showcase your value proposition." }
+                    ]
+                };
+                break;
+            case "CTA":
+                defaultConfig = {
+                    title: "Ready to Get Started?",
+                    description: "Join thousands of satisfied customers and take your business to the next level today.",
+                    buttonText: "Start Free Trial",
+                    buttonLink: "#"
+                };
+                break;
+            case "FOOTER":
+                defaultConfig = {
+                    brandName: "My Brand",
+                    description: "Making the world a better place through innovation and design.",
+                    copyrightText: "© 2024 My Brand Inc. All rights reserved.",
+                    columns: [
+                        {
+                            title: "Product",
+                            links: [
+                                { label: "Features", href: "#" },
+                                { label: "Pricing", href: "#" }
+                            ]
+                        },
+                        {
+                            title: "Company",
+                            links: [
+                                { label: "About", href: "#" },
+                                { label: "Careers", href: "#" }
+                            ]
+                        },
+                        {
+                            title: "Legal",
+                            links: [
+                                { label: "Privacy", href: "#" },
+                                { label: "Terms", href: "#" }
+                            ]
+                        }
+                    ]
+                };
+                break;
+            default:
+                console.warn(`Unknown section type: ${sectionType}, using empty config`);
+                // Try to provide minimal valid config based on type? 
+                defaultConfig = { title: "New Section" };
+                break;
+        }
+
+        console.log("Generated defaultConfig:", defaultConfig);
+        console.log("Calling addSection context method...");
+
+        try {
+            // Optimistic update via context
+            await addSection(
+                sectionType,
+                variant,
+                currentPage.id, // Pass pageId
+                insertPosition,
+                defaultConfig // Use the default config
+            );
+            
+            console.log("addSection returned (async/sync)");
+
+            // Reset insert position
+            setInsertPosition(0);
+            
+            // Scroll to bottom if we added at the end, or find a way to scroll to new section
+            // For now, just show success message
+            setSaveMessage({ type: "success", text: "Section added!" });
+            setTimeout(() => setSaveMessage(null), 2000);
+            
+        } catch (error) {
+            console.error("Failed to add section:", error);
+            setSaveMessage({ type: "error", text: "Failed to add section" });
+            setTimeout(() => setSaveMessage(null), 3000);
+        }
     };
 
     // Handle delete section - SOFT DELETE (just mark for deletion, don't call API yet)
@@ -270,15 +379,17 @@ function EditorContent({
                     ) : (
                         <div className="py-40 flex flex-col items-center justify-center text-slate-400">
                             <p>Empty Page</p>
-                            <button 
-                                onClick={() => {
-                                    setInsertPosition(0);
-                                    setShowSectionPicker(true);
-                                }}
-                                className="mt-4 px-4 py-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-500 transition-colors"
-                            >
-                                + Add Section
-                            </button>
+                            {isEditMode && (
+                                <button 
+                                    onClick={() => {
+                                        setInsertPosition(0);
+                                        setShowSectionPicker(true);
+                                    }}
+                                    className="mt-4 px-4 py-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-500 transition-colors"
+                                >
+                                    + Add Section
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -338,11 +449,33 @@ export default function EditorPage() {
                 
                 setSite(foundSite);
 
-                // 2. Fetch Pages (to find Home)
+                // 2. Fetch Pages (to find Home) or Create if none
                 const pagesRes = await getPagesBySite({ site: { id: foundSite.id, user: { id: user.userId } } });
+                
+                let homePage: PageDTO | null = null;
+
                 if (pagesRes.data && pagesRes.data.length > 0) {
                     // Default to first page (usually Home)
-                    const homePage = pagesRes.data[0];
+                    homePage = pagesRes.data[0];
+                } else {
+                    // No pages found - Create Default 'Home' Page
+                    console.log("No pages found, creating default Home page...");
+                    const createParams = {
+                        site: { id: foundSite.id, user: { id: user.userId } },
+                        name: "Home",
+                        slug: "home"
+                    };
+                    
+                    const createRes = await createPage(createParams);
+                    if (createRes.data) {
+                        homePage = createRes.data;
+                        console.log("Created default Home page:", homePage);
+                    } else {
+                        throw new Error(createRes.error || "Failed to create default page");
+                    }
+                }
+
+                if (homePage) {
                     setCurrentPage(homePage);
 
                     // 3. Fetch Sections for Home Page
@@ -377,6 +510,7 @@ export default function EditorPage() {
             </div>
         );
     }
+// ...
 
     if (error || !site) {
         return (
