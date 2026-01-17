@@ -280,6 +280,18 @@ interface ShapePropertiesPanelProps {
 }
 
 function ShapePropertiesPanel({ shape, onUpdate, onDelete, onClose }: ShapePropertiesPanelProps) {
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const handleDelete = () => {
+        if (showDeleteConfirm) {
+            onDelete();
+            setShowDeleteConfirm(false);
+        } else {
+            setShowDeleteConfirm(true);
+            setTimeout(() => setShowDeleteConfirm(false), 3000);
+        }
+    };
+
     return (
         <div
             data-shape-panel="true"
@@ -290,13 +302,21 @@ function ShapePropertiesPanel({ shape, onUpdate, onDelete, onClose }: ShapePrope
                 <span className="font-semibold text-sm">Edit Shape</span>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={onDelete}
-                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                        title="Delete Shape"
+                        onClick={handleDelete}
+                        className={`p-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                            showDeleteConfirm 
+                                ? "bg-red-600 text-white shadow-lg ring-2 ring-red-400 ring-offset-2 ring-offset-slate-800 px-3 w-auto" 
+                                : "text-red-400 hover:bg-red-500/20"
+                        }`}
+                        title={showDeleteConfirm ? "Click again to confirm" : "Delete Shape"}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                        </svg>
+                        {showDeleteConfirm ? (
+                            <span className="text-xs font-bold whitespace-nowrap">Confirm?</span>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                        )}
                     </button>
                     <button
                         onClick={onClose}

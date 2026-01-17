@@ -28,6 +28,7 @@ export function SectionWrapper({
 }: SectionWrapperProps) {
     const { isEditMode, selectedSectionId, selectSection, updateSectionConfig, getSectionConfig } = useEditor();
     const [isHovered, setIsHovered] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
 
     // Get current config with elements
@@ -126,8 +127,14 @@ export function SectionWrapper({
     };
 
     const handleDelete = () => {
-        if (sectionId && confirm("Are you sure you want to delete this section?")) {
+        if (!sectionId) return;
+
+        if (showDeleteConfirm) {
             onDelete(sectionId);
+            setShowDeleteConfirm(false);
+        } else {
+            setShowDeleteConfirm(true);
+            setTimeout(() => setShowDeleteConfirm(false), 3000);
         }
     };
 
@@ -182,15 +189,23 @@ export function SectionWrapper({
                     </button>
                 )}
 
-                {/* Delete */}
+                {/* Delete - 2-Step Confirmation */}
                 <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                    className="p-2 md:p-1.5 bg-red-500/20 hover:bg-red-500 active:bg-red-600 rounded text-red-400 hover:text-white transition-colors touch-manipulation"
-                    title="Delete Section"
+                    className={`p-2 md:p-1.5 rounded transition-all touch-manipulation flex items-center gap-1 ${
+                        showDeleteConfirm 
+                            ? "bg-red-600 text-white shadow-lg ring-2 ring-red-400 ring-offset-2 ring-offset-slate-900 px-3 w-auto" 
+                            : "bg-red-500/20 hover:bg-red-500 active:bg-red-600 text-red-400 hover:text-white"
+                    }`}
+                    title={showDeleteConfirm ? "Click again to confirm" : "Delete Section"}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                    </svg>
+                    {showDeleteConfirm ? (
+                        <span className="text-xs font-bold whitespace-nowrap">Confirm?</span>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                        </svg>
+                    )}
                 </button>
             </div>
 
