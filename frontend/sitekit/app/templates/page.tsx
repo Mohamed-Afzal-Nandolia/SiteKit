@@ -7,6 +7,8 @@ import { getAllSiteTemplates } from "@/api"; // Use endpoint that returns sectio
 import type { TemplateDTO } from "@/api";
 import { TemplateCardPreview } from "@/components/previews/TemplateCardPreview";
 
+export const dynamic = "force-static";
+
 export default function TemplatesPage() {
     const router = useRouter();
     const [templates, setTemplates] = useState<TemplateDTO[]>([]);

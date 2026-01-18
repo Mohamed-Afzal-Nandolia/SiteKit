@@ -6,6 +6,8 @@ import { isAuthenticated, getUserFromToken, clearAuth, refreshAccessToken } from
 import type { JwtPayload } from "@/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
+export const dynamic = "force-static";
+
 export default function DashboardPage() {
     const router = useRouter();
     const [isClient, setIsClient] = useState(false);

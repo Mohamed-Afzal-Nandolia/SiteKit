@@ -15,6 +15,8 @@ import type { JwtPayload, SiteDTO } from "@/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Toast } from "@/components/ui/Toast";
 
+export const dynamic = "force-static";
+
 export default function MyWebsitesPage() {
     const router = useRouter();
     const [isClient, setIsClient] = useState(false);
