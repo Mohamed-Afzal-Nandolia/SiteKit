@@ -47,4 +47,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.refreshToken(refreshToken, response));
     }
 
+    @GetMapping(APIEndpoints.PING)
+    public ResponseEntity<String> checkServerAlive(){
+        return ResponseEntity.ok("Server is Alive");
+    }
+
 }

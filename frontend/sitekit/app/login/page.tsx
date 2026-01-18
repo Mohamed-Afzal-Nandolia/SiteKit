@@ -5,6 +5,8 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
+export const dynamic = "force-static";
+
 export default function LoginPage() {
   return (
     <AuthGuard redirectIfAuthenticated>

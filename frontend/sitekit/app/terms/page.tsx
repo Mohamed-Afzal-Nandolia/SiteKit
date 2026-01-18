@@ -5,6 +5,9 @@ export const metadata = {
   description: "SiteKit Terms of Service",
 };
 
+export const dynamic = "force-static"; // Verify this page is static
+
+
 export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">

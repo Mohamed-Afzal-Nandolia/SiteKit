@@ -5,6 +5,9 @@ export const metadata = {
   description: "SiteKit Privacy Policy",
 };
 
+export const dynamic = "force-static";
+
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">

@@ -7,6 +7,8 @@ export const metadata = {
   description: "Reset your SiteKit password",
 };
 
+export const dynamic = "force-static";
+
 export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">

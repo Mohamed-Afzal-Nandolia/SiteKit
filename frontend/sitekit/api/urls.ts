@@ -2,7 +2,7 @@
 // All API endpoints and URLs are defined here for easy management
 
 // Base API URL - change this when deploying to different environments
-export const API_BASE_URL = "http://localhost:8080";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 // API Version Base Path
 export const API_V1 = "/api/v1";

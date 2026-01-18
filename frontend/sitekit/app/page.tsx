@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { isAuthenticated } from "@/api";
 
+export const dynamic = "force-static";
+
 export default function Home() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);

@@ -8,6 +8,7 @@ public interface APIEndpoints {
     String AUTH_LOGIN = "/login";
     String AUTH_LOGOUT = "/logout";
     String AUTH_REFRESH = "/refresh";
+    String PING = "/ping";
 
     // User
     String GET_ALL_USERS = "/get-all-users";

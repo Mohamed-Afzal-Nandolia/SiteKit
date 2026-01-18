@@ -5,6 +5,8 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
+export const dynamic = "force-static";
+
 export default function SignupPage() {
   return (
     <AuthGuard redirectIfAuthenticated>

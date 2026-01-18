@@ -1,5 +1,6 @@
 package com.sitekit.securityModule.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -11,16 +12,16 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
+    @Value("${frontendUrl}")
+    String frontendUrl;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration config = new CorsConfiguration();
 
         // Frontend origins
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "http://localhost:4200"
-        ));
+        config.setAllowedOrigins(List.of(frontendUrl));
 
         // Allow all HTTP methods
         config.setAllowedMethods(List.of(
