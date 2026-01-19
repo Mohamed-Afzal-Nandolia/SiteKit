@@ -9,6 +9,14 @@
   --accent: #2563eb;
   --accent-light: #3b82f6;
   --accent-dark: #1d4ed8;
+  --element-scale: 1;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --element-scale: 0.8;
+    --mobile-nav-offset: 74px;
+  }
 }
 
 .dark {

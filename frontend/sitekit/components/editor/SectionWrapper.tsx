@@ -239,6 +239,7 @@ export function SectionWrapper({
                 isEditMode={isEditMode}
                 onUpdateElement={handleUpdateElement}
                 onDeleteElement={handleDeleteElement}
+                isFirst={isFirst}
             />
         </div>
     );

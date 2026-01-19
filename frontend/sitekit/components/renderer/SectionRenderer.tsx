@@ -36,7 +36,7 @@ const SECTION_REGISTRY: ComponentRegistry = {
     }
 };
 
-export function SectionRenderer({ section, disableOverlay = false }: { section: PageSectionDTO, disableOverlay?: boolean }) {
+export function SectionRenderer({ section, disableOverlay = false, isFirst = false }: { section: PageSectionDTO, disableOverlay?: boolean, isFirst?: boolean }) {
     const { sectionType, variant, config, configJson } = section;
     const { isEditMode, updateSectionConfig, getSectionConfig } = useEditor();
 
@@ -113,6 +113,7 @@ export function SectionRenderer({ section, disableOverlay = false }: { section: 
                         isEditMode={false}
                         onUpdateElement={() => {}}
                         onDeleteElement={() => {}}
+                        isFirst={isFirst}
                     />
                 </div>
             )}

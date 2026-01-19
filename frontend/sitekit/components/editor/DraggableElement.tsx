@@ -10,6 +10,7 @@ interface DraggableElementProps {
     isEditMode: boolean;
     onUpdate: (elementId: string, updates: Partial<SectionElement>) => void;
     onDelete: (elementId: string) => void;
+    isFirst?: boolean;
 }
 
 export function DraggableElement({
@@ -18,6 +19,7 @@ export function DraggableElement({
     isEditMode,
     onUpdate,
     onDelete,
+    isFirst = false,
 }: DraggableElementProps) {
     const [isSelected, setIsSelected] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -165,7 +167,9 @@ export function DraggableElement({
         position: "absolute",
         left: `${element.x}%`,
         top: `${element.y}%`,
-        transform: "translate(-50%, -50%)",
+        transform: "translate(-50%, -50%) scale(var(--element-scale, 1))",
+        transformOrigin: "center center",
+        maxWidth: "90vw",
         fontFamily: element.fontFamily,
         fontSize: `${element.fontSize}px`,
         fontWeight: element.fontWeight,
@@ -332,7 +336,7 @@ export function DraggableElement({
                             contentRef.current?.blur();
                         }
                     }}
-                    className="outline-none whitespace-nowrap"
+                    className="outline-none whitespace-pre-wrap break-words"
                 >
                     {element.content}
                 </div>
@@ -359,6 +363,7 @@ interface ElementOverlayProps {
     isEditMode: boolean;
     onUpdateElement: (elementId: string, updates: Partial<SectionElement>) => void;
     onDeleteElement: (elementId: string) => void;
+    isFirst?: boolean;
 }
 
 export function ElementOverlay({
@@ -367,6 +372,7 @@ export function ElementOverlay({
     isEditMode,
     onUpdateElement,
     onDeleteElement,
+    isFirst = false,
 }: ElementOverlayProps) {
     if (!elements || elements.length === 0) return null;
 
@@ -380,6 +386,7 @@ export function ElementOverlay({
                         isEditMode={isEditMode}
                         onUpdate={onUpdateElement}
                         onDelete={onDeleteElement}
+                        isFirst={isFirst}
                     />
                 </div>
             ))}

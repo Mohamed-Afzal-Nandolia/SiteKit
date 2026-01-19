@@ -109,8 +109,8 @@ export default function SiteViewPage() {
         <div className="min-h-screen bg-white dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100">
             <main>
                 {sections.length > 0 ? (
-                    sections.map((section) => (
-                        <SectionRenderer key={section.id} section={section} />
+                    sections.map((section, index) => (
+                        <SectionRenderer key={section.id} section={section} isFirst={index === 0} />
                     ))
                 ) : (
                     <div className="py-20 text-center text-slate-500">
