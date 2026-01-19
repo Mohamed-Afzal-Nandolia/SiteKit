@@ -10,6 +10,7 @@ import {
     createSite,
     deleteSite,
     updateSite,
+    updateSiteStatus,
 } from "@/api";
 import type { JwtPayload, SiteDTO } from "@/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -274,6 +275,34 @@ export default function MyWebsitesPage() {
         }
     };
 
+    // Handle updating site status
+    const handleUpdateStatus = async (siteId: number, newStatus: "PUBLISHED" | "ARCHIVED" | "DRAFT") => {
+        if (!user?.userId) return;
+
+        try {
+            const response = await updateSiteStatus({
+                user: { id: user.userId },
+                id: siteId,
+                siteStatus: newStatus,
+            });
+
+            if (response.data) {
+                await fetchSites(user.userId);
+                setToast({ 
+                    message: `Site ${newStatus.toLowerCase()} successfully`, 
+                    type: "success" 
+                });
+            } else if (response.error) {
+                setToast({ message: response.error, type: "error" });
+            }
+        } catch (error) {
+            console.error("Error updating site status:", error);
+            setToast({ message: "Failed to update site status", type: "error" });
+        } finally {
+            setOpenDropdownId(null);
+        }
+    };
+
     // Open rename modal
     const handleRenameClick = (site: SiteDTO) => {
         setSiteToRename(site);
@@ -526,30 +555,46 @@ export default function MyWebsitesPage() {
                                                     {formatDate(site.createdOn)}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <div className="relative inline-block" ref={openDropdownId === site.id ? dropdownRef : null}>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                    {site.siteStatus === "PUBLISHED" && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setOpenDropdownId(openDropdownId === site.id ? null : site.id!);
+                                                                window.open(`${window.location.origin}/${site.domain || site.id}`, '_blank');
                                                             }}
-                                                            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
-                                                            title="Options"
+                                                            className="p-2 text-slate-400 hover:text-[#2563eb] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
+                                                            title="View Published Site"
                                                         >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                                                                <circle cx="12" cy="5" r="2" />
-                                                                <circle cx="12" cy="12" r="2" />
-                                                                <circle cx="12" cy="19" r="2" />
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                                <circle cx="12" cy="12" r="3" />
                                                             </svg>
                                                         </button>
-                                                        
-                                                        {/* Dropdown Menu */}
-                                                        {openDropdownId === site.id && (
-                                                            <div 
-                                                                className={`absolute right-0 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 ${
-                                                                    index >= filteredSites.length - 2 ? "bottom-full mb-1 origin-bottom-right" : "top-full mt-1 origin-top-right"
-                                                                }`}
-                                                                onClick={(e) => e.stopPropagation()}
+                                                    )}
+                                                        <div className="relative inline-block" ref={openDropdownId === site.id ? dropdownRef : null}>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setOpenDropdownId(openDropdownId === site.id ? null : site.id!);
+                                                                }}
+                                                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
+                                                                title="Options"
                                                             >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <circle cx="12" cy="5" r="2" />
+                                                                    <circle cx="12" cy="12" r="2" />
+                                                                    <circle cx="12" cy="19" r="2" />
+                                                                </svg>
+                                                            </button>
+                                                            
+                                                            {/* Dropdown Menu */}
+                                                            {openDropdownId === site.id && (
+                                                                <div 
+                                                                    className={`absolute right-0 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 ${
+                                                                        index >= filteredSites.length - 2 ? "bottom-full mb-1 origin-bottom-right" : "top-full mt-1 origin-top-right"
+                                                                    }`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
@@ -566,6 +611,73 @@ export default function MyWebsitesPage() {
                                                                         </svg>
                                                                         Copy Link
                                                                     </button>
+                                                                    
+                                                            {/* Status Actions */}
+                                                            {site.siteStatus !== "PUBLISHED" && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "PUBLISHED");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-green-600 dark:text-green-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                                                    </svg>
+                                                                    Publish
+                                                                </button>
+                                                            )}
+                                                            
+                                                            {site.siteStatus === "PUBLISHED" && (
+                                                                 <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "DRAFT");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-yellow-600 dark:text-yellow-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                                                                    </svg>
+                                                                    Unpublish
+                                                                </button>
+                                                            )}
+
+                                                            {site.siteStatus !== "ARCHIVED" && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "ARCHIVED");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <polyline points="21 8 21 21 3 21 3 8" />
+                                                                        <rect x="1" y="3" width="22" height="5" />
+                                                                        <line x1="10" y1="12" x2="14" y2="12" />
+                                                                    </svg>
+                                                                    Archive
+                                                                </button>
+                                                            )}
+                                                            
+                                                            {site.siteStatus === "ARCHIVED" && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "DRAFT");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <polyline points="1 4 1 10 7 10" />
+                                                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                                                                    </svg>
+                                                                    Restore to Draft
+                                                                </button>
+                                                            )}
+
+                                                            <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
@@ -596,7 +708,8 @@ export default function MyWebsitesPage() {
                                                             </div>
                                                         )}
                                                     </div>
-                                                </td>
+                                                </div>
+                                            </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -635,26 +748,42 @@ export default function MyWebsitesPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="relative" ref={openDropdownId === site.id ? dropdownRef : null}>
-                                                <button
-                                                    onClick={() => setOpenDropdownId(openDropdownId === site.id ? null : site.id!)}
-                                                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg cursor-pointer"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                                                        <circle cx="12" cy="5" r="2" />
-                                                        <circle cx="12" cy="12" r="2" />
-                                                        <circle cx="12" cy="19" r="2" />
-                                                    </svg>
-                                                </button>
-                                                
-                                                {openDropdownId === site.id && (
-                                                    <div 
-                                                        className={`absolute right-0 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 ${
-                                                            index >= filteredSites.length - 2 ? "bottom-full mb-1 origin-bottom-right" : "top-full mt-1 origin-top-right"
-                                                        }`}
-                                                        onClick={(e) => e.stopPropagation()}
+                                            <div className="flex items-center gap-1">
+                                                {site.siteStatus === "PUBLISHED" && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.open(`${window.location.origin}/${site.domain || site.id}`, '_blank');
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-[#2563eb] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
+                                                        title="View Published Site"
                                                     >
-                                                        <button
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                            <circle cx="12" cy="12" r="3" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                                <div className="relative" ref={openDropdownId === site.id ? dropdownRef : null}>
+                                                    <button
+                                                        onClick={() => setOpenDropdownId(openDropdownId === site.id ? null : site.id!)}
+                                                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg cursor-pointer"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                            <circle cx="12" cy="5" r="2" />
+                                                            <circle cx="12" cy="12" r="2" />
+                                                            <circle cx="12" cy="19" r="2" />
+                                                        </svg>
+                                                    </button>
+                                                    
+                                                    {openDropdownId === site.id && (
+                                                        <div 
+                                                            className={`absolute right-0 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 ${
+                                                                index >= filteredSites.length - 2 ? "bottom-full mb-1 origin-bottom-right" : "top-full mt-1 origin-top-right"
+                                                            }`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     const url = `${window.location.origin}/${site.domain || site.id}`;
@@ -670,6 +799,73 @@ export default function MyWebsitesPage() {
                                                                 </svg>
                                                                 Copy Link
                                                             </button>
+                                                            
+                                                            {/* Status Actions */}
+                                                            {site.siteStatus !== "PUBLISHED" && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "PUBLISHED");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-green-600 dark:text-green-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                                                    </svg>
+                                                                    Publish
+                                                                </button>
+                                                            )}
+                                                            
+                                                            {site.siteStatus === "PUBLISHED" && (
+                                                                 <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "DRAFT");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-yellow-600 dark:text-yellow-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                                                                    </svg>
+                                                                    Unpublish
+                                                                </button>
+                                                            )}
+
+                                                            {site.siteStatus !== "ARCHIVED" && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "ARCHIVED");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <polyline points="21 8 21 21 3 21 3 8" />
+                                                                        <rect x="1" y="3" width="22" height="5" />
+                                                                        <line x1="10" y1="12" x2="14" y2="12" />
+                                                                    </svg>
+                                                                    Archive
+                                                                </button>
+                                                            )}
+                                                            
+                                                            {site.siteStatus === "ARCHIVED" && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleUpdateStatus(site.id!, "DRAFT");
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <polyline points="1 4 1 10 7 10" />
+                                                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                                                                    </svg>
+                                                                    Restore to Draft
+                                                                </button>
+                                                            )}
+
+                                                            <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -702,6 +898,7 @@ export default function MyWebsitesPage() {
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
                                 ))}
                             </div>
                         </>
