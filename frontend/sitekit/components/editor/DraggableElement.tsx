@@ -44,20 +44,20 @@ export function DraggableElement({
     // Start dragging
     const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
         if (!isEditMode || isEditing) return;
-        
+
         e.preventDefault();
         e.stopPropagation();
-        
+
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        
+
         dragStartPos.current = {
             x: clientX,
             y: clientY,
             elementX: element.x,
             elementY: element.y,
         };
-        
+
         setIsDragging(true);
         setIsSelected(true);
         setGuides({ x: false, y: false });
@@ -70,17 +70,17 @@ export function DraggableElement({
         const handleMove = (e: MouseEvent | TouchEvent) => {
             const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
             const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-            
+
             const sectionRect = sectionRef.current!.getBoundingClientRect();
-            
+
             // Calculate delta as percentage of section size
             const deltaX = ((clientX - dragStartPos.current.x) / sectionRect.width) * 100;
             const deltaY = ((clientY - dragStartPos.current.y) / sectionRect.height) * 100;
-            
+
             // Calculate new position
             let newX = dragStartPos.current.elementX + deltaX;
             let newY = dragStartPos.current.elementY + deltaY;
-            
+
             // Snap to center logic
             const SNAP_THRESHOLD = 1.5; // 1.5% threshold
             let showGuideX = false;
@@ -101,7 +101,7 @@ export function DraggableElement({
             // Clamp to section bounds (with some padding)
             newX = Math.max(5, Math.min(95, newX));
             newY = Math.max(5, Math.min(95, newY));
-            
+
             setGuides({ x: showGuideX, y: showGuideY });
             onUpdate(element.id, { x: newX, y: newY });
         };
@@ -128,17 +128,17 @@ export function DraggableElement({
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
-            
+
             // Check if click is inside the element
             if (elementRef.current && elementRef.current.contains(target)) {
                 return; // Don't close if clicking the element itself
             }
-            
+
             // Check if click is inside the style panel (has data-style-panel attribute or is inside one)
             if (target.closest('[data-style-panel="true"]')) {
                 return; // Don't close if clicking the style panel
             }
-            
+
             setIsSelected(false);
             setIsEditing(false);
         };
@@ -148,13 +148,13 @@ export function DraggableElement({
             const timeoutId = setTimeout(() => {
                 document.addEventListener("mousedown", handleClickOutside);
             }, 100);
-            
+
             return () => {
                 clearTimeout(timeoutId);
                 document.removeEventListener("mousedown", handleClickOutside);
             };
         }
-        
+
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
@@ -179,8 +179,8 @@ export function DraggableElement({
         lineHeight: element.lineHeight,
         letterSpacing: `${element.letterSpacing}px`,
         textTransform: element.textTransform,
-        cursor: isEditMode 
-            ? (isDragging ? "grabbing" : "grab") 
+        cursor: isEditMode
+            ? (isDragging ? "grabbing" : "grab")
             : (element.type === "button" ? "pointer" : "default"),
         userSelect: isEditMode ? (isEditing ? "text" : "none") : "auto",
         zIndex: isSelected ? 100 : 60,
@@ -207,14 +207,21 @@ export function DraggableElement({
             borderColor: element.borderColor || "transparent",
             // Use text-shadow to simulate text stroke as it's more widely supported than -webkit-text-stroke
             // Default to the previous black outline if no stroke color is set, OR if user explicitly sets it
-            textShadow: element.textStrokeWidth 
+            textShadow: element.textStrokeWidth
                 ? Array.from({ length: 8 }, (_, i) => {
                     const angle = (i * 45) * (Math.PI / 180);
                     const x = Math.round(Math.cos(angle) * (element.textStrokeWidth || 1));
                     const y = Math.round(Math.sin(angle) * (element.textStrokeWidth || 1));
                     return `${x}px ${y}px 0 ${element.textStrokeColor || "#000"}`;
-                  }).join(", ")
+                }).join(", ")
                 : (element.textStrokeColor ? `1px 1px 0 ${element.textStrokeColor}, -1px -1px 0 ${element.textStrokeColor}, 1px -1px 0 ${element.textStrokeColor}, -1px 1px 0 ${element.textStrokeColor}` : "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000"),
+        }),
+        // Image-specific styles
+        ...(element.type === "image" && {
+            padding: 0,
+            width: element.width ? `${element.width}%` : "auto",
+            height: element.height ? `${element.height}%` : "auto",
+            backgroundColor: "transparent",
         }),
     };
 
@@ -231,7 +238,7 @@ export function DraggableElement({
             }
             return;
         }
-        
+
         e.stopPropagation();
         if (!isDragging) {
             setIsSelected(true);
@@ -280,7 +287,7 @@ export function DraggableElement({
             // Update on scroll or resize just in case
             window.addEventListener('scroll', updateRect, true);
             window.addEventListener('resize', updateRect);
-            
+
             return () => {
                 window.removeEventListener('scroll', updateRect, true);
                 window.removeEventListener('resize', updateRect);
@@ -292,14 +299,14 @@ export function DraggableElement({
         <>
             {/* Alignment Guides */}
             {guides.x && (
-                <div 
-                    className="absolute top-0 bottom-0 border-l border-pink-500 z-[150] pointer-events-none" 
+                <div
+                    className="absolute top-0 bottom-0 border-l border-pink-500 z-[150] pointer-events-none"
                     style={{ left: "50%", transform: "translateX(-50%)" }}
                 />
             )}
             {guides.y && (
-                <div 
-                    className="absolute left-0 right-0 border-t border-pink-500 z-[150] pointer-events-none" 
+                <div
+                    className="absolute left-0 right-0 border-t border-pink-500 z-[150] pointer-events-none"
                     style={{ top: "50%", transform: "translateY(-50%)" }}
                 />
             )}
@@ -310,34 +317,48 @@ export function DraggableElement({
                 onDoubleClick={handleDoubleClick}
                 onMouseDown={handleDragStart}
                 onTouchStart={handleDragStart}
-                className={`transition-shadow ${
-                    isEditMode && isSelected 
-                        ? "ring-2 ring-blue-500 ring-offset-2 shadow-lg" 
-                        : isEditMode 
-                            ? "hover:ring-2 hover:ring-blue-400/50 hover:ring-offset-1" 
-                            : ""
-                }`}
+                className={`transition-shadow ${isEditMode && isSelected
+                    ? "ring-2 ring-blue-500 ring-offset-2 shadow-lg"
+                    : isEditMode
+                        ? "hover:ring-2 hover:ring-blue-400/50 hover:ring-offset-1"
+                        : ""
+                    }`}
             >
-                <div
-                    ref={contentRef}
-                    contentEditable={isEditMode && isEditing}
-                    suppressContentEditableWarning
-                    onBlur={handleContentBlur}
-                    onKeyDown={(e) => {
-                        if (e.key === "Escape") {
-                            setIsEditing(false);
-                            contentRef.current?.blur();
-                        }
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            setIsEditing(false);
-                            contentRef.current?.blur();
-                        }
-                    }}
-                    className="outline-none whitespace-pre-wrap break-words"
-                >
-                    {element.content}
-                </div>
+                {/* Render content based on element type */}
+                {element.type === "image" && element.src ? (
+                    <img
+                        src={element.src}
+                        alt="Asset"
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: element.objectFit || "contain",
+                            pointerEvents: "none",
+                        }}
+                        draggable={false}
+                    />
+                ) : (
+                    <div
+                        ref={contentRef}
+                        contentEditable={isEditMode && isEditing && element.type !== "image"}
+                        suppressContentEditableWarning
+                        onBlur={handleContentBlur}
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                                setIsEditing(false);
+                                contentRef.current?.blur();
+                            }
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                setIsEditing(false);
+                                contentRef.current?.blur();
+                            }
+                        }}
+                        className="outline-none whitespace-nowrap"
+                    >
+                        {element.content}
+                    </div>
+                )}
             </div>
 
             {/* Style Panel */}

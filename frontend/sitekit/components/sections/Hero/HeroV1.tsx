@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React from "react";
-import { EditableText, EditableLink, useEditor, EditableShape } from "@/components/editor";
+import { EditableText, EditableLink, useEditor, EditableShape, ImagePicker } from "@/components/editor";
 import type { DecorativeShape } from "@/components/editor/shapeTypes";
 
 export interface HeroV1Config {
@@ -17,8 +17,6 @@ export interface HeroV1Config {
     alignment?: "center" | "left";
     backgroundImage?: string; // URL
     decorativeShapes?: DecorativeShape[];
-    sectionBackground?: string;
-    sectionBackgroundOpacity?: number;
 }
 
 interface HeroV1Props {
@@ -28,7 +26,7 @@ interface HeroV1Props {
 
 export function HeroV1({ config, onConfigChange }: HeroV1Props) {
     const { isEditMode } = useEditor();
-    
+
     const {
         headline,
         headlineStyles = {},
@@ -92,22 +90,9 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
     const alignClass = alignment === "center" ? "text-center items-center" : "text-left items-start";
 
     return (
-        <section 
-            className="relative py-20 lg:py-32 overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors"
-        >
-             {/* Background decoration */}
+        <section className="relative py-20 lg:py-32 overflow-hidden bg-slate-50 dark:bg-slate-950">
+            {/* Background decoration */}
             <div className="absolute inset-0 z-0">
-                {/* Custom Background Color Layer */}
-                {config.sectionBackground && config.sectionBackground !== "transparent" && (
-                     <div 
-                        className="absolute inset-0 transition-colors"
-                        style={{ 
-                            backgroundColor: config.sectionBackground,
-                            opacity: config.sectionBackgroundOpacity ?? 1
-                        }}
-                     />
-                )}
-
                 {/* Decorative Shapes */}
                 {decorativeShapes.map((shape) => (
                     <EditableShape
@@ -117,29 +102,32 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
                         onDelete={() => deleteShape(shape.id)}
                     />
                 ))}
-                
+
                 {/* Default shape if no custom shapes */}
                 {decorativeShapes.length === 0 && !backgroundImage && (
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-blue-500/10 dark:bg-blue-500/5 blur-[100px] rounded-full" />
                 )}
-                
+
                 {/* Background image */}
                 {backgroundImage && (
-                     <div 
+                    <div
                         className="absolute inset-0 bg-cover bg-center opacity-10"
                         style={{ backgroundImage: `url(${backgroundImage})` }}
-                     />
+                    />
                 )}
-                
-                {/* Add Shape Button */}
+
+                {/* Edit Mode Controls */}
                 {isEditMode && (
-                    <button
-                        onClick={addNewShape}
-                        className="absolute bottom-4 right-4 px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm font-medium z-10"
-                        title="Add decorative shape"
-                    >
-                        + Add Shape
-                    </button>
+                    <div className="absolute bottom-4 right-4 z-10 flex gap-2">
+                        {/* Add Shape Button */}
+                        <button
+                            onClick={addNewShape}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm font-medium h-fit"
+                            title="Add decorative shape"
+                        >
+                            + Add Shape
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -156,7 +144,7 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
                         placeholder="Enter headline..."
                     />
                 )}
-                
+
                 {subheadline && (
                     <EditableText
                         value={subheadline}
