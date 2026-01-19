@@ -18,6 +18,7 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
     const [showBorderColorPicker, setShowBorderColorPicker] = useState(false);
     const [showTextStrokeColorPicker, setShowTextStrokeColorPicker] = useState(false);
     const [position, setPosition] = useState<"right" | "left">("right");
+    const [verticalPosition, setVerticalPosition] = useState<"top" | "bottom">("top");
     const [mounted, setMounted] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     
@@ -50,8 +51,16 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
             } else if (spaceOnLeft >= panelWidth + panelGap) {
                 setPosition("left");
             } else {
-                // Default to right if neither side has enough space
                 setPosition("right");
+            }
+
+            // Check vertical space (approx panel height 450px)
+            const spaceBelow = window.innerHeight - anchorRect.top;
+            // If less than 500px due to keyboard/small screen, and we have space above, flip it
+            if (spaceBelow < 500 && anchorRect.top > 500) {
+                setVerticalPosition("bottom");
+            } else {
+                setVerticalPosition("top");
             }
         }
     }, [anchorRect]);
@@ -70,19 +79,30 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
         
         const top = Math.max(10, Math.min(anchorRect.top, window.innerHeight - 400));
         
+        const style: React.CSSProperties = {
+            position: "fixed",
+        };
+
+        // Horizontal Positioning
         if (position === "right") {
-            return {
-                position: "fixed",
-                top: `${top}px`,
-                left: `${anchorRect.right + panelGap}px`,
-            };
+            style.left = `${anchorRect.right + panelGap}px`;
         } else {
-            return {
-                position: "fixed",
-                top: `${top}px`,
-                left: `${anchorRect.left - panelWidth - panelGap}px`,
-            };
+            style.left = `${anchorRect.left - panelWidth - panelGap}px`;
         }
+
+        // Vertical Positioning
+        if (verticalPosition === "bottom") {
+            // Align bottom of panel with top of element (or slightly above anchorRect.bottom to keep association?)
+            // User requested "above the text". So align bottom of panel to top of element.
+            style.bottom = `${window.innerHeight - anchorRect.top + panelGap}px`;
+            style.maxHeight = `${anchorRect.top - 20}px`; // Constrain height to space above
+        } else {
+            // Default top alignment
+            style.top = `${top}px`;
+            style.maxHeight = `${window.innerHeight - top - 20}px`;
+        }
+
+        return style;
     };
 
     if (!mounted) return null;
