@@ -766,7 +766,10 @@ export default function MyWebsitesPage() {
                                                 )}
                                                 <div className="relative" ref={openDropdownId === site.id ? dropdownRef : null}>
                                                     <button
-                                                        onClick={() => setOpenDropdownId(openDropdownId === site.id ? null : site.id!)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenDropdownId(openDropdownId === site.id ? null : site.id!);
+                                                        }}
                                                         className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg cursor-pointer"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
