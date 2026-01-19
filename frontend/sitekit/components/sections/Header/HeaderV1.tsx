@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { EditableText, EditableLink, useEditor } from "@/components/editor";
 import { createDefaultTextElement, createDefaultButtonElement, COLOR_PRESETS } from "../../editor/elementTypes";
+import { ElementOverlay } from "../../editor/DraggableElement";
 import type { SectionElement } from "../../editor/elementTypes";
 
 export interface HeaderV1Config {
@@ -24,6 +25,7 @@ interface HeaderV1Props {
 export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isEditMode } = useEditor();
+    const sectionRef = React.useRef<HTMLElement>(null);
     
     // Editor state
     const [isExpanded, setIsExpanded] = useState(false);
@@ -94,8 +96,11 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
     };
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <header 
+            ref={sectionRef}
+            className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md"
+        >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative z-10">
                 {/* Logo */}
                 {logoText && (
                     <div className="flex-shrink-0 font-bold text-xl text-slate-900 dark:text-white">
@@ -189,6 +194,17 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                     </button>
                 </div>
             </div>
+
+            {/* Custom Elements Overlay (View Mode Only) */}
+            {!isEditMode && elements.length > 0 && (
+                <ElementOverlay
+                    elements={elements}
+                    sectionRef={sectionRef}
+                    isEditMode={false}
+                    onUpdateElement={() => {}}
+                    onDeleteElement={() => {}}
+                />
+            )}
 
             {/* Editor Toolbar Button - Absolute Positioned */}
             {isEditMode && (
@@ -284,7 +300,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
 
             {/* Mobile Menu Overlay */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-4 space-y-4 shadow-xl">
+                <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white px-4 py-4 space-y-4 shadow-xl">
                     <nav className="flex flex-col space-y-4">
                         {navLinks.map((link, idx) => (
                             <Link 
