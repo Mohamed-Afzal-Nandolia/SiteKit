@@ -30,7 +30,10 @@ function EditorContent({
         pendingDeletions,
         markSectionForDeletion,
         moveSection,
-        addSection
+        addSection,
+        canUndo,
+        undo,
+        clearHistory
     } = useEditor();
     
     const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -69,6 +72,7 @@ function EditorContent({
     // Handle cancel - discard all pending changes
     const handleCancel = () => {
         setSections(initialSections);
+        clearHistory(); // Clear undo history when canceling
         setSaveMessage({ type: "success", text: "Changes discarded" });
         setTimeout(() => setSaveMessage(null), 2000);
     };
@@ -303,6 +307,21 @@ function EditorContent({
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12" y2="18" /></svg>
                         </button>
                     </div>
+
+                    {/* Undo Button - only show when there are undoable actions */}
+                    {isEditMode && canUndo && (
+                        <button 
+                            onClick={undo}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 hover:text-white transition-colors cursor-pointer"
+                            title="Undo last action"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 7v6h6" />
+                                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                            </svg>
+                            Undo
+                        </button>
+                    )}
 
                     {/* Cancel Button - only show when there are pending changes */}
                     {hasPendingChanges && (

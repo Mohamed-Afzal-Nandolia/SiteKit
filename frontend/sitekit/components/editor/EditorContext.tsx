@@ -5,6 +5,13 @@ import type { PageSectionDTO } from "@/api";
 import { updateSection, deleteSection, reorderSections } from "@/api";
 
 // Editor Context State
+// History snapshot type for undo functionality
+interface HistorySnapshot {
+    sections: PageSectionDTO[];
+    pendingChanges: Map<number, Record<string, unknown>>;
+    pendingDeletions: Set<number>;
+}
+
 interface EditorContextState {
     // Edit mode
     isEditMode: boolean;
@@ -43,6 +50,11 @@ interface EditorContextState {
     // Save functionality
     saveAllChanges: (userId: number, pageId: number) => Promise<{ success: boolean; error?: string }>;
     isSaving: boolean;
+    
+    // Undo functionality
+    canUndo: boolean;
+    undo: () => void;
+    clearHistory: () => void;
 }
 
 // Default context value
@@ -65,6 +77,9 @@ const defaultContextValue: EditorContextState = {
     hasPendingChanges: false,
     saveAllChanges: async () => ({ success: false }),
     isSaving: false,
+    canUndo: false,
+    undo: () => {},
+    clearHistory: () => {},
 };
 
 // Create context
@@ -93,6 +108,90 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     
     // Saving state
     const [isSaving, setIsSaving] = useState(false);
+    
+    // History stack for undo functionality (max 50 entries)
+    const [history, setHistory] = useState<HistorySnapshot[]>([]);
+    const MAX_HISTORY = 50;
+    
+    // Debounce timer ref for history saving
+    const historyTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+    const pendingSnapshotRef = React.useRef<HistorySnapshot | null>(null);
+    const lastSavedSnapshotRef = React.useRef<string>("");
+    
+    // Helper to save current state to history (debounced to prevent saving every pixel of drag)
+    const saveToHistory = useCallback(() => {
+        // Create a snapshot string for comparison to avoid duplicate entries
+        const currentSnapshotString = JSON.stringify({
+            sections: sections,
+            pendingChanges: Array.from(pendingChanges.entries()),
+            pendingDeletions: Array.from(pendingDeletions),
+        });
+        
+        // If the state hasn't changed from what we last saved, skip
+        if (currentSnapshotString === lastSavedSnapshotRef.current) {
+            return;
+        }
+        
+        // Capture the snapshot immediately (before the upcoming change)
+        // Only capture if we don't have a pending snapshot yet for this "drag session"
+        if (!pendingSnapshotRef.current) {
+            pendingSnapshotRef.current = {
+                sections: JSON.parse(JSON.stringify(sections)),
+                pendingChanges: new Map(pendingChanges),
+                pendingDeletions: new Set(pendingDeletions),
+            };
+        }
+        
+        // Clear any pending timer
+        if (historyTimerRef.current) {
+            clearTimeout(historyTimerRef.current);
+        }
+        
+        // Set a debounce timer - push the snapshot to history after 300ms of no changes
+        historyTimerRef.current = setTimeout(() => {
+            if (pendingSnapshotRef.current) {
+                const snapshot = pendingSnapshotRef.current;
+                
+                // Update last saved snapshot reference
+                lastSavedSnapshotRef.current = JSON.stringify({
+                    sections: snapshot.sections,
+                    pendingChanges: Array.from(snapshot.pendingChanges.entries()),
+                    pendingDeletions: Array.from(snapshot.pendingDeletions),
+                });
+                
+                setHistory(prev => {
+                    const newHistory = [...prev, snapshot];
+                    // Keep only last MAX_HISTORY entries
+                    if (newHistory.length > MAX_HISTORY) {
+                        return newHistory.slice(-MAX_HISTORY);
+                    }
+                    return newHistory;
+                });
+                
+                // Clear the pending snapshot
+                pendingSnapshotRef.current = null;
+            }
+        }, 300); // 300ms debounce
+    }, [sections, pendingChanges, pendingDeletions]);
+    
+    // Undo function
+    const undo = useCallback(() => {
+        if (history.length === 0) return;
+        
+        const lastSnapshot = history[history.length - 1];
+        
+        // Restore state from snapshot
+        setSectionsState(lastSnapshot.sections);
+        setPendingChanges(lastSnapshot.pendingChanges);
+        pendingChangesRef.current = new Map(lastSnapshot.pendingChanges);
+        setPendingDeletions(lastSnapshot.pendingDeletions);
+        
+        // Remove the used snapshot from history
+        setHistory(prev => prev.slice(0, -1));
+    }, [history]);
+    
+    // Check if undo is available
+    const canUndo = history.length > 0;
 
     // Set edit mode
     const setEditMode = useCallback((value: boolean) => {
@@ -123,6 +222,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
     // Add a new section locally
     const addSection = useCallback((sectionType: any, variant: string, pageId: number, position?: number, config: Record<string, unknown> = {}) => {
+        saveToHistory(); // Save state before change for undo
         const tempId = -Date.now(); // Negative ID for temp sections
         
         const newSection: PageSectionDTO = {
@@ -152,10 +252,11 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 position: idx
             }));
         });
-    }, []);
+    }, [saveToHistory]);
 
     // Mark a section for deletion (soft delete - only removes from UI)
     const markSectionForDeletion = useCallback((sectionId: number) => {
+        saveToHistory(); // Save state before change for undo
         // If it's a temp section (negative ID), just remove it completely from state
         if (sectionId < 0) {
             setSectionsState(prev => prev.filter(s => s.id !== sectionId));
@@ -167,7 +268,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             updated.add(sectionId);
             return updated;
         });
-    }, []);
+    }, [saveToHistory]);
 
     // Restore a section (undo soft delete)
     const restoreSection = useCallback((sectionId: number) => {
@@ -180,6 +281,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
     // Move a section up or down
     const moveSection = useCallback((sectionId: number, direction: "up" | "down") => {
+        saveToHistory(); // Save state before change for undo
         setSectionsState(prev => {
             const sorted = [...prev].sort((a, b) => (a.position || 0) - (b.position || 0));
             const currentIndex = sorted.findIndex(s => s.id === sectionId);
@@ -200,7 +302,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 position: index,
             }));
         });
-    }, []);
+    }, [saveToHistory]);
 
     // Check if order has changed from original
     const hasReorderChanges = React.useMemo(() => {
@@ -250,6 +352,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
     // Update section config locally
     const updateSectionConfig = useCallback((sectionId: number, newConfig: Record<string, unknown>) => {
+        saveToHistory(); // Save state before change for undo
         // Update ref immediately for synchronous access in saveAllChanges
         if (pendingChangesRef.current) {
             pendingChangesRef.current.set(sectionId, newConfig);
@@ -272,7 +375,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             }
             return section;
         }));
-    }, []);
+    }, [saveToHistory]);
 
     // Save all pending changes to backend
     // Order: Add sections → Update configs → Delete sections → Reorder (LAST)
@@ -439,7 +542,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             // Update local state to reflect the saves
             setPendingChanges(new Map());
             pendingChangesRef.current = new Map();
-             setPendingDeletions(new Set());
+            setPendingDeletions(new Set());
+            setHistory([]); // Clear undo history after save
              
             // Update sections with their real IDs
             setSectionsState(prev => {
@@ -484,11 +588,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         markSectionForDeletion,
         restoreSection,
         moveSection,
-        addSection, // Export the new function
+        addSection,
         hasReorderChanges,
         hasPendingChanges: pendingChanges.size > 0 || pendingDeletions.size > 0 || hasReorderChanges || hasAddedSections,
         saveAllChanges,
         isSaving,
+        canUndo,
+        undo,
+        clearHistory: useCallback(() => setHistory([]), []),
     };
 
     return (
