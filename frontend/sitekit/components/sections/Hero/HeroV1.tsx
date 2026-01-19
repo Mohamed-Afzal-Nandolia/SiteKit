@@ -17,6 +17,8 @@ export interface HeroV1Config {
     alignment?: "center" | "left";
     backgroundImage?: string; // URL
     decorativeShapes?: DecorativeShape[];
+    sectionBackground?: string;
+    sectionBackgroundOpacity?: number;
 }
 
 interface HeroV1Props {
@@ -90,9 +92,22 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
     const alignClass = alignment === "center" ? "text-center items-center" : "text-left items-start";
 
     return (
-        <section className="relative py-20 lg:py-32 overflow-hidden bg-slate-50 dark:bg-slate-950">
+        <section 
+            className="relative py-20 lg:py-32 overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors"
+        >
              {/* Background decoration */}
             <div className="absolute inset-0 z-0">
+                {/* Custom Background Color Layer */}
+                {config.sectionBackground && config.sectionBackground !== "transparent" && (
+                     <div 
+                        className="absolute inset-0 transition-colors"
+                        style={{ 
+                            backgroundColor: config.sectionBackground,
+                            opacity: config.sectionBackgroundOpacity ?? 1
+                        }}
+                     />
+                )}
+
                 {/* Decorative Shapes */}
                 {decorativeShapes.map((shape) => (
                     <EditableShape

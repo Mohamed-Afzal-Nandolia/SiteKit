@@ -12,6 +12,8 @@ export interface CtaV1Config {
     buttonText?: string;
     buttonLink?: string;
     buttonStyles?: React.CSSProperties;
+    sectionBackground?: string;
+    sectionBackgroundOpacity?: number;
 }
 
 interface CtaV1Props {
@@ -45,8 +47,22 @@ export function CtaV1({ config, onConfigChange }: CtaV1Props) {
     };
 
     return (
-        <section className="py-20 bg-blue-600 dark:bg-blue-700">
-            <div className="max-w-4xl mx-auto px-4 text-center">
+        <section className="relative py-20 bg-blue-600 dark:bg-blue-700 overflow-hidden transition-colors">
+            {/* Background decoration */}
+            <div className="absolute inset-0 z-0">
+                {/* Custom Background Color Layer */}
+                {config.sectionBackground && config.sectionBackground !== "transparent" && (
+                    <div 
+                        className="absolute inset-0 transition-colors"
+                        style={{ 
+                            backgroundColor: config.sectionBackground,
+                            opacity: config.sectionBackgroundOpacity ?? 1
+                        }}
+                    />
+                )}
+            </div>
+            
+            <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
                 {title && (
                     <EditableText
                         value={title}

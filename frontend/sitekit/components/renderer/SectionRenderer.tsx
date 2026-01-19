@@ -36,7 +36,7 @@ const SECTION_REGISTRY: ComponentRegistry = {
     }
 };
 
-export function SectionRenderer({ section }: { section: PageSectionDTO }) {
+export function SectionRenderer({ section, disableOverlay = false, isFirst = false }: { section: PageSectionDTO, disableOverlay?: boolean, isFirst?: boolean }) {
     const { sectionType, variant, config, configJson } = section;
     const { isEditMode, updateSectionConfig, getSectionConfig } = useEditor();
 
@@ -90,5 +90,36 @@ export function SectionRenderer({ section }: { section: PageSectionDTO }) {
         }
     };
 
-    return <Component config={parsedConfig} onConfigChange={handleConfigChange} />;
+    // Extract elements and background from config
+    const elements = parsedConfig.elements || [];
+    const sectionBackground = parsedConfig.sectionBackground;
+
+    return (
+        <div 
+            className="relative"
+            style={sectionBackground && sectionBackground !== "transparent" ? { backgroundColor: sectionBackground } : {}}
+        >
+            <Component config={parsedConfig} onConfigChange={handleConfigChange} />
+            
+            {/* Render Overlay Elements for Public View / Read-Only */}
+            {elements.length > 0 && !disableOverlay && (
+                <div className="absolute inset-0 pointer-events-none">
+                    {/* We need to import ElementOverlay or replicate its read-only logic. 
+                        Since it's in a different directory structure, let's use the one from editor. 
+                    */}
+                    <ElementOverlay 
+                        elements={elements} 
+                        sectionRef={{ current: null } as any} // Ref not strictly needed for read-only pos
+                        isEditMode={false}
+                        onUpdateElement={() => {}}
+                        onDeleteElement={() => {}}
+                        isFirst={isFirst}
+                    />
+                </div>
+            )}
+        </div>
+    );
 }
+
+// Import ElementOverlay locally or ensure it is exported from @/components/editor
+import { ElementOverlay } from "../editor/DraggableElement";

@@ -24,9 +24,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     const checkAuth = useCallback(async () => {
-        console.log("[AuthProvider] Checking auth...");
         let authenticated = isAuthenticated();
-        console.log("[AuthProvider] isAuthenticated:", authenticated);
         
         // If not authenticated, try to refresh the token
         if (!authenticated) {
@@ -39,7 +37,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         
         setIsLoggedIn(authenticated);
-        console.log("[AuthProvider] isLoggedIn set to:", authenticated);
         
         if (authenticated) {
             setUser(getUserFromToken());
@@ -60,7 +57,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Check auth on mount
     useEffect(() => {
-        console.log("[AuthProvider] Mounted, checking auth...");
         checkAuth().then(() => {
             setIsLoading(false);
         });
