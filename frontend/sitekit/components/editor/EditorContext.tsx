@@ -381,11 +381,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     // Order: Add sections → Update configs → Delete sections → Reorder (LAST)
     const saveAllChanges = useCallback(async (userId: number, pageId: number): Promise<{ success: boolean; error?: string }> => {
         setIsSaving(true);
-        console.log("Saving changes...", { 
-            pendingUpdates: pendingChangesRef.current.size, 
-            pendingDeletions: pendingDeletions.size, 
-            hasReorder: hasReorderChanges 
-        });
         
         const tempToRealId = new Map<number, number>();
 
@@ -403,8 +398,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 
                 // Get latest config (from pending or current state)
                 const config = getSectionConfig(section.id) || {};
-                
-                console.log("Saving NEW section", section.sectionType);
                 
                 try {
                     const result = await apiAddSection({
@@ -436,7 +429,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
                 const section = sections.find(s => s.id === sectionId);
                 if (section) {
-                    console.log(`Updating section ${sectionId} with config:`, config);
                     const configString = JSON.stringify(config);
                     
                     updatePromises.push(
@@ -449,7 +441,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                             position: section.position,
                             config: configString, // Revert to string as backend likely expects it
                         }).then(res => {
-                            console.log(`Update section ${sectionId} response:`, res);
                             if (res.error) throw new Error(res.error);
                             return res;
                         }).catch(err => {
@@ -463,9 +454,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
             // Wait for updates to complete
             if (updatePromises.length > 0) {
-                console.log(`Waiting for ${updatePromises.length} updates to complete...`);
                 await Promise.all(updatePromises);
-                console.log("All updates completed.");
             }
 
             // 2. Handle deletions
@@ -515,7 +504,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 const shouldReorder = hasReorderChanges || newSections.length > 0;
                 
                 if (shouldReorder) {
-                    console.log("Reordering sections:", orderedSectionIds);
                     try {
                         await reorderSections({
                             userId,
@@ -526,8 +514,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                         console.error("Failed to reorder sections:", err);
                         errors.push("Failed to reorder sections");
                     }
-                } else {
-                    console.log("Skipping reorder - order unchanged and no new sections");
                 }
             }
 
@@ -537,7 +523,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             }
 
             // SUCCESS!
-            console.log("Save completed successfully");
             
             // Update local state to reflect the saves
             setPendingChanges(new Map());

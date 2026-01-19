@@ -66,8 +66,6 @@ export function SectionWrapper({
     const handleUpdateElement = (elementId: string, updates: Partial<SectionElement>) => {
         if (!sectionId) return;
         
-        console.log("SectionWrapper handleUpdateElement:", elementId, updates);
-        
         const currentElements = elementsRef.current;
         const config = currentConfigRef.current;
         

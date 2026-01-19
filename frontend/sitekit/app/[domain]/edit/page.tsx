@@ -50,7 +50,6 @@ function EditorContent({
     // Handle save - pass both userId and pageId for reorder API
     const handleSave = async () => {
         const pageId = currentPage?.id || 0;
-        console.log("handleSave initiated", { userId, pageId, hasPendingChanges });
         
         if (!userId) {
             console.error("No userId found in handleSave aborting");
@@ -62,7 +61,6 @@ function EditorContent({
         if (result.success) {
             setSaveMessage({ type: "success", text: "Changes saved!" });
         } else {
-            console.error("Save failed result:", result);
             setSaveMessage({ type: "error", text: result.error || "Failed to save" });
         }
         // Clear message after 3 seconds
@@ -83,10 +81,7 @@ function EditorContent({
 
     // Handle add section
     const handleAddSection = async (sectionType: SectionType, variant: string) => {
-        console.log("handleAddSection called with:", { sectionType, variant, currentPageId: currentPage?.id });
-
         if (!currentPage?.id) {
-            console.error("Missing currentPage.id");
             setSaveMessage({ type: "error", text: "Error: Page ID not found" });
             return;
         }
@@ -172,9 +167,6 @@ function EditorContent({
                 break;
         }
 
-        console.log("Generated defaultConfig:", defaultConfig);
-        console.log("Calling addSection context method...");
-
         try {
             // Optimistic update via context
             await addSection(
@@ -185,8 +177,6 @@ function EditorContent({
                 defaultConfig // Use the default config
             );
             
-            console.log("addSection returned (async/sync)");
-
             // Reset insert position
             setInsertPosition(0);
             
@@ -487,7 +477,6 @@ export default function EditorPage() {
                     homePage = pagesRes.data[0];
                 } else {
                     // No pages found - Create Default 'Home' Page
-                    console.log("No pages found, creating default Home page...");
                     const createParams = {
                         site: { id: foundSite.id, user: { id: user.userId } },
                         name: "Home",
@@ -497,7 +486,6 @@ export default function EditorPage() {
                     const createRes = await createPage(createParams);
                     if (createRes.data) {
                         homePage = createRes.data;
-                        console.log("Created default Home page:", homePage);
                     } else {
                         throw new Error(createRes.error || "Failed to create default page");
                     }
