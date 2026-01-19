@@ -47,10 +47,19 @@ function EditorContent({
     // Handle save - pass both userId and pageId for reorder API
     const handleSave = async () => {
         const pageId = currentPage?.id || 0;
+        console.log("handleSave initiated", { userId, pageId, hasPendingChanges });
+        
+        if (!userId) {
+            console.error("No userId found in handleSave aborting");
+            setSaveMessage({ type: "error", text: "Authentication error: Please log in again." });
+            return;
+        }
+
         const result = await saveAllChanges(userId, pageId);
         if (result.success) {
             setSaveMessage({ type: "success", text: "Changes saved!" });
         } else {
+            console.error("Save failed result:", result);
             setSaveMessage({ type: "error", text: result.error || "Failed to save" });
         }
         // Clear message after 3 seconds

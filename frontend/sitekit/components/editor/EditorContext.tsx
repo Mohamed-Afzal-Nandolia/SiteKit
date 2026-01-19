@@ -272,6 +272,12 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     // Order: Add sections → Update configs → Delete sections → Reorder (LAST)
     const saveAllChanges = useCallback(async (userId: number, pageId: number): Promise<{ success: boolean; error?: string }> => {
         setIsSaving(true);
+        console.log("Saving changes...", { 
+            pendingUpdates: pendingChanges.size, 
+            pendingDeletions: pendingDeletions.size, 
+            hasReorder: hasReorderChanges 
+        });
+        
         const tempToRealId = new Map<number, number>();
 
         try {
@@ -279,8 +285,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
             // 0. Handle New Sections (Negative IDs)
             const newSections = sections.filter(s => (s.id || 0) < 0);
-            const addPromises: Promise<any>[] = [];
-
+            
             // Import addSection here to avoid circular dependency issues if declared at top with useEditor
              const { addSection: apiAddSection } = await import("@/api");
 
@@ -292,9 +297,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 
                 console.log("Saving NEW section", section.sectionType);
                 
-                // We run these sequentially to ensure we get IDs mapped correctly before moving on? 
-                // Actually parallel is fine for creation, but we need to map them all before reordering.
-                // Using Promise.all would need us to track which promise corresponds to which temp ID.
                 try {
                     const result = await apiAddSection({
                         userId,
@@ -314,9 +316,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            // If we had errors creating sections, we might want to stop? 
-            // For now let's continue but report errors.
-
             // 1. Handle config updates (skip sections that are pending deletion OR were just added)
             const updatePromises: Promise<any>[] = [];
             pendingChanges.forEach((config, sectionId) => {
@@ -328,7 +327,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
                 const section = sections.find(s => s.id === sectionId);
                 if (section) {
+                    console.log(`Updating section ${sectionId} with config:`, config);
                     const configString = JSON.stringify(config);
+                    
                     updatePromises.push(
                         updateSection({
                             id: sectionId,
@@ -337,9 +338,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                             sectionType: section.sectionType,
                             variant: section.variant,
                             position: section.position,
-                            config: configString,
-                            configJson: configString,
+                            config: configString, // Revert to string as backend likely expects it
+                            configJson: configString, // Keep for compat
+                        }).then(res => {
+                            console.log(`Update section ${sectionId} response:`, res);
+                            if (res.error) throw new Error(res.error);
+                            return res;
                         }).catch(err => {
+                            console.error(`Failed to update section ${sectionId}:`, err);
                             errors.push(`Failed to update section ${sectionId}`);
                             return { error: err };
                         })
@@ -349,13 +355,15 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
             // Wait for updates to complete
             if (updatePromises.length > 0) {
+                console.log(`Waiting for ${updatePromises.length} updates to complete...`);
                 await Promise.all(updatePromises);
+                console.log("All updates completed.");
             }
 
             // 2. Handle deletions
             const deletePromises: Promise<any>[] = [];
             pendingDeletions.forEach((sectionId) => {
-                // If it's a temp ID, we already handled it by not creating it (if it was somehow pending deletion and addition? Unlikely logic flow but safe).
+                // If it's a temp ID, we already handled it by not creating it
                 if (sectionId < 0) return; 
 
                 deletePromises.push(
@@ -372,10 +380,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             }
 
             // 3. Handle reorder LAST
-            // We need to construct the list using Real IDs.
-            // Any section that was just added needs its Real ID from tempToRealId.
-            // Any section that exists needs its existing ID.
-            
             const orderedSectionIds: number[] = [];
             const sortedCurrentSections = [...sections]
                 .filter(s => s.id && !pendingDeletions.has(s.id))
@@ -390,8 +394,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                     if (realId) {
                         orderedSectionIds.push(realId);
                     } else {
-                        // If we failed to create it, we can't include it in reorder.
-                        // Ideally we should have errored out earlier.
                          console.warn("Skipping section in reorder because it has no real ID:", s.id);
                     }
                 } else {
@@ -401,6 +403,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             }
 
             if (orderedSectionIds.length > 0) {
+                console.log("Reordering sections:", orderedSectionIds);
                 try {
                     await reorderSections({
                         userId,
@@ -408,6 +411,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                         orderedSectionIds,
                     });
                 } catch (err) {
+                    console.error("Failed to reorder sections:", err);
                     errors.push("Failed to reorder sections");
                 }
             }
@@ -418,6 +422,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             }
 
             // SUCCESS!
+            console.log("Save completed successfully");
             
             // Update local state to reflect the saves
             setPendingChanges(new Map());
