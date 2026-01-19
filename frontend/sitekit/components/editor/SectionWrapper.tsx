@@ -36,6 +36,7 @@ export function SectionWrapper({
     const currentConfig = sectionId ? (getSectionConfig(sectionId) as ExtendedSectionConfig) || {} : {};
     const elements = currentConfig.elements || [];
     const sectionBackground = currentConfig.sectionBackground;
+    const sectionBackgroundOpacity = currentConfig.sectionBackgroundOpacity;
     
     // Keep refs for handlers to avoid stale closures
     const currentConfigRef = useRef(currentConfig);
@@ -104,6 +105,18 @@ export function SectionWrapper({
         updateSectionConfig(sectionId, {
             ...config,
             sectionBackground: color,
+        });
+    };
+
+    // Change section background opacity
+    const handleBackgroundOpacityChange = (opacity: number) => {
+        if (!sectionId) return;
+        
+        const config = currentConfigRef.current;
+        
+        updateSectionConfig(sectionId, {
+            ...config,
+            sectionBackgroundOpacity: opacity,
         });
     };
 
@@ -226,6 +239,8 @@ export function SectionWrapper({
                 onAddElement={handleAddElement}
                 onBackgroundChange={handleBackgroundChange}
                 currentBackground={sectionBackground}
+                onBackgroundOpacityChange={handleBackgroundOpacityChange}
+                currentOpacity={sectionBackgroundOpacity}
                 isVisible={isEditMode && isHovered}
             />
 
