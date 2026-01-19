@@ -9,8 +9,6 @@ interface SectionToolbarProps {
     onAddShape?: () => void;
     onBackgroundChange?: (color: string) => void;
     currentBackground?: string;
-    onBackgroundOpacityChange?: (opacity: number) => void;
-    currentOpacity?: number;
     isVisible: boolean;
 }
 
@@ -19,8 +17,6 @@ export function SectionToolbar({
     onAddShape,
     onBackgroundChange, 
     currentBackground,
-    onBackgroundOpacityChange,
-    currentOpacity,
     isVisible 
 }: SectionToolbarProps) {
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
@@ -147,21 +143,6 @@ export function SectionToolbar({
                             </button>
                         </div>
 
-                        {/* Opacity Control */}
-                        <div className="flex items-center gap-2 mb-2">
-                            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 w-16">Opacity</label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={Math.round((currentOpacity ?? 1) * 100)}
-                                onChange={(e) => onBackgroundOpacityChange?.(parseInt(e.target.value) / 100)}
-                                className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                            />
-                            <span className="text-xs text-slate-500 dark:text-slate-400 w-8 text-right">
-                                {Math.round((currentOpacity ?? 1) * 100)}%
-                            </span>
-                        </div>
 
                         {/* Presets Grid */}
                         {showBackgroundPicker && (
