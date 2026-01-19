@@ -403,16 +403,23 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             }
 
             if (orderedSectionIds.length > 0) {
-                console.log("Reordering sections:", orderedSectionIds);
-                try {
-                    await reorderSections({
-                        userId,
-                        pageId,
-                        orderedSectionIds,
-                    });
-                } catch (err) {
-                    console.error("Failed to reorder sections:", err);
-                    errors.push("Failed to reorder sections");
+                // Only call reorder if we actually have reorder changes OR added new sections (which implies order change)
+                const shouldReorder = hasReorderChanges || newSections.length > 0;
+                
+                if (shouldReorder) {
+                    console.log("Reordering sections:", orderedSectionIds);
+                    try {
+                        await reorderSections({
+                            userId,
+                            pageId,
+                            orderedSectionIds,
+                        });
+                    } catch (err) {
+                        console.error("Failed to reorder sections:", err);
+                        errors.push("Failed to reorder sections");
+                    }
+                } else {
+                    console.log("Skipping reorder - order unchanged and no new sections");
                 }
             }
 
