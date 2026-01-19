@@ -33,7 +33,9 @@ export function DraggableElement({
         setIsEditing(false);
         if (contentRef.current) {
             const newContent = contentRef.current.innerText;
+            console.log("DraggableElement blur:", { id: element.id, old: element.content, new: newContent });
             if (newContent !== element.content) {
+                console.log("DraggableElement calling onUpdate");
                 onUpdate(element.id, { content: newContent });
             }
         }

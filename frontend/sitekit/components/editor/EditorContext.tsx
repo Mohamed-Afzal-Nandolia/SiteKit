@@ -86,6 +86,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     
     // Pending changes map: sectionId -> updated config
     const [pendingChanges, setPendingChanges] = useState<Map<number, Record<string, unknown>>>(new Map());
+    const pendingChangesRef = React.useRef<Map<number, Record<string, unknown>>>(new Map());
     
     // Pending deletions set: section IDs marked for deletion (soft delete)
     const [pendingDeletions, setPendingDeletions] = useState<Set<number>>(new Set());
@@ -225,8 +226,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         const section = sections.find(s => s.id === sectionId);
         if (!section) return null;
 
-        // Check for pending changes first
-        const pending = pendingChanges.get(sectionId);
+        // Check for pending changes first (use Ref for latest sync data)
+        const pending = pendingChangesRef.current.get(sectionId) || pendingChanges.get(sectionId);
         if (pending) return pending;
 
         // Parse existing config
@@ -249,6 +250,11 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
     // Update section config locally
     const updateSectionConfig = useCallback((sectionId: number, newConfig: Record<string, unknown>) => {
+        // Update ref immediately for synchronous access in saveAllChanges
+        if (pendingChangesRef.current) {
+            pendingChangesRef.current.set(sectionId, newConfig);
+        }
+
         setPendingChanges(prev => {
             const updated = new Map(prev);
             updated.set(sectionId, newConfig);
@@ -273,7 +279,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     const saveAllChanges = useCallback(async (userId: number, pageId: number): Promise<{ success: boolean; error?: string }> => {
         setIsSaving(true);
         console.log("Saving changes...", { 
-            pendingUpdates: pendingChanges.size, 
+            pendingUpdates: pendingChangesRef.current.size, 
             pendingDeletions: pendingDeletions.size, 
             hasReorder: hasReorderChanges 
         });
@@ -318,7 +324,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
             // 1. Handle config updates (skip sections that are pending deletion OR were just added)
             const updatePromises: Promise<any>[] = [];
-            pendingChanges.forEach((config, sectionId) => {
+            pendingChangesRef.current.forEach((config, sectionId) => {
                 // Don't update config for sections that will be deleted
                 if (pendingDeletions.has(sectionId)) return;
                 
@@ -339,7 +345,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                             variant: section.variant,
                             position: section.position,
                             config: configString, // Revert to string as backend likely expects it
-                            configJson: configString, // Keep for compat
                         }).then(res => {
                             console.log(`Update section ${sectionId} response:`, res);
                             if (res.error) throw new Error(res.error);
@@ -433,6 +438,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             
             // Update local state to reflect the saves
             setPendingChanges(new Map());
+            pendingChangesRef.current = new Map();
              setPendingDeletions(new Set());
              
             // Update sections with their real IDs

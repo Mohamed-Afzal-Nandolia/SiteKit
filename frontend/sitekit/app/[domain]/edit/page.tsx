@@ -373,7 +373,7 @@ function EditorContent({
                                         isFirst={index === 0}
                                         isLast={index === sortedSections.length - 1}
                                     >
-                                        <SectionRenderer section={section} />
+                                        <SectionRenderer section={section} disableOverlay={true} />
                                     </SectionWrapper>
                                     {/* Add Section button between sections */}
                                     {isEditMode && index < sortedSections.length - 1 && (
