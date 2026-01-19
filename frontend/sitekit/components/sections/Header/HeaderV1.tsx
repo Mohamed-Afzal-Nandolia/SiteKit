@@ -79,24 +79,24 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
             className="sticky top-0 z-50 w-full border-b border-white/10"
         >
             {/* Background Layer */}
-             <div 
-                className="absolute inset-0 z-0 backdrop-blur-md transition-all"
-                style={
-                    sectionBackground && sectionBackground !== "transparent"
-                        ? { 
+            <div className="absolute inset-0 z-0">
+                {/* Default backdrop blur layer */}
+                <div 
+                    className="absolute inset-0 backdrop-blur-md bg-white dark:bg-slate-950"
+                    style={{ opacity: (!sectionBackground || sectionBackground === "transparent") ? (sectionBackgroundOpacity ?? 0.8) : 0 }}
+                />
+                
+                {/* Custom Background Color Layer */}
+                {sectionBackground && sectionBackground !== "transparent" && (
+                    <div 
+                        className="absolute inset-0 transition-colors"
+                        style={{ 
                             backgroundColor: sectionBackground,
                             opacity: sectionBackgroundOpacity ?? 1
-                          }
-                        : undefined
-                }
-             >
-                {(!sectionBackground || sectionBackground === "transparent") && (
-                    <div 
-                        className="w-full h-full bg-white dark:bg-slate-950"
-                        style={{ opacity: sectionBackgroundOpacity ?? 0.8 }}
+                        }}
                     />
                 )}
-             </div>
+            </div>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative z-10">
                 {/* Logo */}
                 {logoText && (

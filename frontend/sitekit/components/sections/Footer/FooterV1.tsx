@@ -24,6 +24,8 @@ export interface FooterV1Config {
     columnLinkStyles?: React.CSSProperties[][];
     copyrightText?: string;
     copyrightStyles?: React.CSSProperties;
+    sectionBackground?: string;
+    sectionBackgroundOpacity?: number;
 }
 
 interface FooterV1Props {
@@ -87,8 +89,22 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
     };
 
     return (
-        <footer className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <footer className="relative bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8 overflow-hidden transition-colors">
+            {/* Background decoration */}
+            <div className="absolute inset-0 z-0">
+                {/* Custom Background Color Layer */}
+                {config.sectionBackground && config.sectionBackground !== "transparent" && (
+                    <div 
+                        className="absolute inset-0 transition-colors"
+                        style={{ 
+                            backgroundColor: config.sectionBackground,
+                            opacity: config.sectionBackgroundOpacity ?? 1
+                        }}
+                    />
+                )}
+            </div>
+            
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                     <div className="col-span-1 md:col-span-1">
                         {brandName && (

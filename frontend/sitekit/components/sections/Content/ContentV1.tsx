@@ -18,6 +18,8 @@ export interface ContentV1Config {
     featureTitleStyles?: React.CSSProperties[];
     featureDescriptionStyles?: React.CSSProperties[];
     layout?: "grid" | "alternating";
+    sectionBackground?: string;
+    sectionBackgroundOpacity?: number;
 }
 
 interface ContentV1Props {
@@ -68,8 +70,22 @@ export function ContentV1({ config, onConfigChange }: ContentV1Props) {
     };
 
     return (
-        <section className="py-20 bg-white dark:bg-slate-900">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative py-20 bg-white dark:bg-slate-900 overflow-hidden transition-colors">
+            {/* Background decoration */}
+            <div className="absolute inset-0 z-0">
+                {/* Custom Background Color Layer */}
+                {config.sectionBackground && config.sectionBackground !== "transparent" && (
+                    <div 
+                        className="absolute inset-0 transition-colors"
+                        style={{ 
+                            backgroundColor: config.sectionBackground,
+                            opacity: config.sectionBackgroundOpacity ?? 1
+                        }}
+                    />
+                )}
+            </div>
+            
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     {title && (
                         <EditableText
