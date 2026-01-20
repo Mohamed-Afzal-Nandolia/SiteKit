@@ -37,13 +37,7 @@ export function SectionWrapper({
     const setShowBackgroundImagePickerRef = useRef(setShowBackgroundImagePicker);
     setShowBackgroundImagePickerRef.current = setShowBackgroundImagePicker;
 
-    // Debug: log when showBackgroundImagePicker changes
-    React.useEffect(() => {
-        console.log("showBackgroundImagePicker state changed to:", showBackgroundImagePicker);
-        if (showBackgroundImagePicker) {
-            console.log("Modal should now be visible!");
-        }
-    }, [showBackgroundImagePicker]);
+
 
     // Get current config with elements
     const sectionId = section.id;
@@ -52,15 +46,13 @@ export function SectionWrapper({
     const sectionBackground = currentConfig.sectionBackground;
     const sectionBackgroundImage = currentConfig.sectionBackgroundImage;
 
-    // Debug: log elements on render
-    console.log("Section", sectionId, "config:", currentConfig, "elements:", elements);
+
 
     // Add a new element
     const handleAddElement = (element: SectionElement) => {
         if (!sectionId) return;
 
-        console.log("Adding element:", element);
-        console.log("Current elements:", elements);
+
 
         const updatedElements = [...elements, element];
         updateSectionConfig(sectionId, {
@@ -68,20 +60,20 @@ export function SectionWrapper({
             elements: updatedElements,
         });
 
-        console.log("Updated elements:", updatedElements);
+
     };
 
     // Update an element
     const handleUpdateElement = (elementId: string, updates: Partial<SectionElement>) => {
         if (!sectionId) return;
 
-        console.log("Updating element:", elementId, "with:", updates);
+
 
         const updatedElements = elements.map((el) =>
             el.id === elementId ? { ...el, ...updates } : el
         );
 
-        console.log("New elements array:", updatedElements);
+
 
         updateSectionConfig(sectionId, {
             ...currentConfig,
@@ -112,7 +104,7 @@ export function SectionWrapper({
 
     // Open background image picker - use ref to avoid stale closure issues
     const openBackgroundImagePicker = React.useCallback(() => {
-        console.log("openBackgroundImagePicker called, using ref to set state");
+
         setShowBackgroundImagePickerRef.current(true);
     }, []);
 
@@ -140,13 +132,13 @@ export function SectionWrapper({
     // Build background styles for view mode
     const getBackgroundStyles = (): React.CSSProperties => {
         const styles: React.CSSProperties = {};
-        console.log("getBackgroundStyles called, sectionBackgroundImage:", sectionBackgroundImage?.substring(0, 50));
+
         if (sectionBackgroundImage) {
             styles.backgroundImage = `url(${sectionBackgroundImage})`;
             styles.backgroundSize = 'cover';
             styles.backgroundPosition = 'center';
             styles.backgroundRepeat = 'no-repeat';
-            console.log("Applied background image styles");
+
         }
         if (sectionBackground && sectionBackground !== "transparent") {
             // If both color and image, color acts as a fallback

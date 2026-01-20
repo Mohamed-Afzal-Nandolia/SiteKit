@@ -74,11 +74,9 @@ export async function refreshAccessToken(): Promise<boolean> {
     try {
         const currentToken = localStorage.getItem(ACCESS_TOKEN_KEY);
         if (!currentToken) {
-            console.log("[refreshAccessToken] No access token found");
             return false;
         }
 
-        console.log("[refreshAccessToken] Sending refresh request...");
         const response = await fetch(AUTH_ENDPOINTS.REFRESH, {
             method: "POST",
             headers: {
@@ -87,10 +85,8 @@ export async function refreshAccessToken(): Promise<boolean> {
             },
         });
 
-        console.log("[refreshAccessToken] Response status:", response.status);
         if (response.ok) {
             const data = await response.json();
-            console.log("[refreshAccessToken] Response data:", data);
             if (data.accessToken) {
                 localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
                 return true;

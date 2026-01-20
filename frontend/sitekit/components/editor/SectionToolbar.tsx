@@ -148,11 +148,8 @@ export function SectionToolbar({
                             {/* Background Image */}
                             <button
                                 onClick={() => {
-                                    console.log("Background Image button clicked, onOpenBackgroundImagePicker:", onOpenBackgroundImagePicker);
                                     if (onOpenBackgroundImagePicker) {
                                         onOpenBackgroundImagePicker();
-                                    } else {
-                                        alert("ERROR: onOpenBackgroundImagePicker is undefined!");
                                     }
                                     setIsExpanded(false);
                                 }}

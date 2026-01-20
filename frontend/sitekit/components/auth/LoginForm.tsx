@@ -46,7 +46,6 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     
     try {
       const response = await login({ emailAddress, password, rememberMe });
-      console.log(response)
       if (response.error) {
         throw new Error(response.error);
       }

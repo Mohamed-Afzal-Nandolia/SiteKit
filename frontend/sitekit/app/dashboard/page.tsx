@@ -23,13 +23,10 @@ export default function DashboardPage() {
             
             if (!authenticated) {
                 // Try to refresh the token first
-                console.log("[Dashboard] Token expired, attempting refresh...");
                 const refreshed = await refreshAccessToken();
                 if (refreshed) {
-                    console.log("[Dashboard] Token refreshed successfully!");
                     authenticated = true;
                 } else {
-                    console.log("[Dashboard] Token refresh failed, redirecting to login");
                     router.replace("/login");
                     return;
                 }
