@@ -210,8 +210,21 @@ export function SectionToolbar({
                                         onClick={() => handleBackgroundSelect("transparent")}
                                         className="w-full px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
                                     >
-                                        Remove Background
+                                        Remove Background Color
                                     </button>
+                                    
+                                    {/* Separate Remove Background Image button if image exists */}
+                                    {currentBackgroundImage && (
+                                        <button
+                                            onClick={() => {
+                                                if (onBackgroundChange) onBackgroundChange("remove-image");
+                                                setShowBackgroundPicker(false);
+                                            }}
+                                            className="w-full mt-2 px-3 py-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50"
+                                        >
+                                            Remove Background Image
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

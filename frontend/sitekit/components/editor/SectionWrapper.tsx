@@ -41,7 +41,28 @@ export function SectionWrapper({
 
     // Get current config with elements
     const sectionId = section.id;
-    const currentConfig = sectionId ? (getSectionConfig(sectionId) as ExtendedSectionConfig) || {} : {};
+    // Get pending config from context, OR fallback to existing section config
+    const pendingConfig = sectionId ? getSectionConfig(sectionId) : undefined;
+    
+    // Parse the initial config from props
+    let initialConfig: ExtendedSectionConfig = {};
+    try {
+        if (section.configJson) {
+            initialConfig = JSON.parse(section.configJson);
+        } else if (typeof section.config === "string") {
+             initialConfig = JSON.parse(section.config);
+        } else {
+             initialConfig = (section.config as ExtendedSectionConfig) || {};
+        }
+    } catch (e) {
+        console.error("Failed to parse section config", e);
+    }
+
+    // Merge: pending config takes precedence
+    const currentConfig: ExtendedSectionConfig = {
+        ...initialConfig,
+        ...(pendingConfig || {})
+    };
     const elements = currentConfig.elements || [];
     const sectionBackground = currentConfig.sectionBackground;
     const sectionBackgroundImage = currentConfig.sectionBackgroundImage;
@@ -95,6 +116,14 @@ export function SectionWrapper({
     // Change section background
     const handleBackgroundChange = (color: string) => {
         if (!sectionId) return;
+
+        if (color === "remove-image") {
+            updateSectionConfig(sectionId, {
+                ...currentConfig,
+                sectionBackgroundImage: "", // Clear image
+            });
+            return;
+        }
 
         updateSectionConfig(sectionId, {
             ...currentConfig,

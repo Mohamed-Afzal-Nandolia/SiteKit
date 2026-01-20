@@ -17,18 +17,22 @@ export interface SectionElement {
     fileType?: string; // MIME type
 
 
-    // Typography
-    fontSize: number;
-    fontFamily: string;
-    fontWeight: string;
-    fontStyle: "normal" | "italic";
-    textDecoration: "none" | "underline" | "line-through";
-    textColor: string;
-    backgroundColor: string;
-    textAlign: "left" | "center" | "right";
-    lineHeight: number;
-    letterSpacing: number;
-    textTransform: "none" | "uppercase" | "lowercase" | "capitalize";
+    // Style properties
+    maxWidth?: string | number;
+    fontSize?: number;
+    fontFamily?: string;
+    fontWeight?: string;
+    fontStyle?: "normal" | "italic";
+    textDecoration?: "none" | "underline" | "line-through";
+    textColor?: string;
+    backgroundColor?: string;
+    textAlign?: "left" | "center" | "right";
+    lineHeight?: number;
+    letterSpacing?: number;
+    textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+
+    // Mobile Overrides
+    mobile?: Partial<SectionElement>;
 
     // Button-specific
     borderRadius?: number;

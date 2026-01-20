@@ -1,228 +1,228 @@
--- =========================================
--- Vx__seed_bistro55_restaurant_template.sql
--- =========================================
-
--- 1. Create Template
-INSERT INTO template_module_template (
-    name,
-    category,
-    thumbnail_url,
-    is_public,
-    created_by,
-    created_on,
-    last_update_on
-) VALUES (
-    'Bistro 55 Restaurant Template',
-    'RESTAURANT',
-    'https://cdn.sitekit.dev/templates/bistro55.png',
-    TRUE,
-    1,
-    NOW(),
-    NOW()
-);
-
--- Capture template ID
-SET @template_id = LAST_INSERT_ID();
-
--- 2. HEADER
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'HEADER',
-    'header_v1',
-    0,
-    '{
-      "logoText":"Bistro 55",
-      "navLinks":[
-        {"label":"Menu","href":"#menu"},
-        {"label":"Our Story","href":"#story"},
-        {"label":"Events","href":"#events"},
-        {"label":"Location","href":"#footer"}
-      ],
-      "actionButton":{
-        "label":"Book a Table",
-        "href":"#reserve",
-        "variant":"primary"
-      }
-    }'
-);
-
--- 3. HERO (Main)
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'HERO',
-    'hero_v1',
-    1,
-    '{
-      "headline":"Taste the Authentic Flavors of Italy",
-      "subheadline":"Award-winning dining in the heart of the city. Experience culinary perfection crafted with passion.",
-      "primaryCta":{"label":"View Menu","href":"#menu"},
-      "secondaryCta":{"label":"Our Story","href":"#story"},
-      "alignment":"center",
-      "backgroundImage":"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop"
-    }'
-);
-
--- 4. CONTENT (Philosophy)
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'CONTENT',
-    'content_v1',
-    2,
-    '{
-      "title":"Our Philosophy",
-      "description":"We believe that food is an experience, not just a meal. Our chefs source only the freshest produce from local farmers to bring you dishes that sing with flavor.",
-      "layout":"grid",
-      "features":[]
-    }'
-);
-
--- 5. CONTENT (Signature Dishes)
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'CONTENT',
-    'content_v1',
-    3,
-    '{
-      "title":"Signature Dishes",
-      "description":"Curated by Executive Chef Marco.",
-      "layout":"grid",
-      "features":[
-        {"title":"Truffle Pasta","description":"Hand-made tagliatelle with shaved black truffles and parmesan cream."},
-        {"title":"Wagyu Steak","description":"A5 Japanese Wagyu served with roasted garlic mash and seasonal greens."},
-        {"title":"Seafood Risotto","description":"Arborio rice slow-cooked with saffron, scallops, and tiger prawns."},
-        {"title":"Classic Tiramisu","description":"Traditional recipe with espresso-soaked ladyfingers and mascarpone."},
-        {"title":"Burrata Salad","description":"Fresh burrata cheese with heirloom tomatoes and basil pesto."},
-        {"title":"Lobster Bisque","description":"Rich and creamy soup made with fresh Atlantic lobster."}
-      ]
-    }'
-);
-
--- 6. HERO (Farm to Table)
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'HERO',
-    'hero_v1',
-    4,
-    '{
-      "headline":"Farm to Table Freshness",
-      "subheadline":"We partner with over 20 local farms to ensure every ingredient on your plate is sustainable, organic, and harvested at peak ripeness.",
-      "primaryCta":{"label":"Meet Our Producers","href":"#partners"},
-      "alignment":"left"
-    }'
-);
-
--- 7. CONTENT (Private Dining)
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'CONTENT',
-    'content_v1',
-    5,
-    '{
-      "title":"Private Dining & Events",
-      "description":"Host your next celebration with us.",
-      "layout":"grid",
-      "features":[
-        {"title":"The Wine Cellar","description":"Intimate seating for up to 12 guests surrounded by our vintage collection."},
-        {"title":"The Garden Terrace","description":"Al fresco dining for up to 40 guests, perfect for summer evenings."},
-        {"title":"Full Buyout","description":"Reserve the entire restaurant for weddings and corporate galas."}
-      ]
-    }'
-);
-
--- 8. HERO (Atmosphere)
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'HERO',
-    'hero_v1',
-    6,
-    '{
-      "headline":"An Atmosphere Like No Other",
-      "subheadline":"Immerse yourself in our warm, rustic elegance. The perfect setting for romantic dates or family gatherings.",
-      "secondaryCta":{"label":"View Gallery","href":"#gallery"},
-      "alignment":"center",
-      "backgroundImage":"https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974"
-    }'
-);
-
--- 9. CONTENT (Reviews)
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'CONTENT',
-    'content_v1',
-    7,
-    '{
-      "title":"Guest Reviews",
-      "description":"Don''t just take our word for it.",
-      "layout":"grid",
-      "features":[
-        {"title":"The Food Critic","description":"⭐⭐⭐⭐⭐ ''The best pasta I have had outside of Rome. A true gem.''"},
-        {"title":"Sarah J.","description":"⭐⭐⭐⭐⭐ ''Hostess was wonderful, atmosphere was perfect. Highly recommend the steak.''"},
-        {"title":"Local Guide","description":"⭐⭐⭐⭐⭐ ''Incredible wine list and even better desserts. Will be back!''"}
-      ]
-    }'
-);
-
--- 10. CTA
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'CTA',
-    'cta_v1',
-    8,
-    '{
-      "title":"Ready for an Unforgettable Meal?",
-      "description":"Tables fill up fast on weekends. Secure your reservation today.",
-      "buttonText":"Reserve a Table",
-      "buttonLink":"#reserve"
-    }'
-);
-
--- 11. FOOTER
-INSERT INTO template_module_template_section (
-    template_id, section_type, variant, position, config_json
-) VALUES (
-    @template_id,
-    'FOOTER',
-    'footer_v1',
-    9,
-    '{
-      "brandName":"Bistro 55",
-      "description":"123 Culinary Ave, Food District, NY 10012 | (555) 123-4567",
-      "copyrightText":"© 2024 Bistro 55 Group.",
-      "columns":[
-        {
-          "title":"Hours",
-          "links":[
-            {"label":"Mon-Thu: 5pm - 10pm","href":"#"},
-            {"label":"Fri-Sat: 5pm - 11pm","href":"#"},
-            {"label":"Sunday: Closed","href":"#"}
-          ]
-        },
-        {
-          "title":"Connect",
-          "links":[
-            {"label":"Instagram","href":"#"},
-            {"label":"Facebook","href":"#"},
-            {"label":"TripAdvisor","href":"#"}
-          ]
-        }
-      ]
-    }'
-);
+---- =========================================
+---- Vx__seed_bistro55_restaurant_template.sql
+---- =========================================
+--
+---- 1. Create Template
+--INSERT INTO template_module_template (
+--    name,
+--    category,
+--    thumbnail_url,
+--    is_public,
+--    created_by,
+--    created_on,
+--    last_update_on
+--) VALUES (
+--    'Bistro 55 Restaurant Template',
+--    'RESTAURANT',
+--    'https://cdn.sitekit.dev/templates/bistro55.png',
+--    TRUE,
+--    1,
+--    NOW(),
+--    NOW()
+--);
+--
+---- Capture template ID
+--SET @template_id = LAST_INSERT_ID();
+--
+---- 2. HEADER
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'HEADER',
+--    'header_v1',
+--    0,
+--    '{
+--      "logoText":"Bistro 55",
+--      "navLinks":[
+--        {"label":"Menu","href":"#menu"},
+--        {"label":"Our Story","href":"#story"},
+--        {"label":"Events","href":"#events"},
+--        {"label":"Location","href":"#footer"}
+--      ],
+--      "actionButton":{
+--        "label":"Book a Table",
+--        "href":"#reserve",
+--        "variant":"primary"
+--      }
+--    }'
+--);
+--
+---- 3. HERO (Main)
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'HERO',
+--    'hero_v1',
+--    1,
+--    '{
+--      "headline":"Taste the Authentic Flavors of Italy",
+--      "subheadline":"Award-winning dining in the heart of the city. Experience culinary perfection crafted with passion.",
+--      "primaryCta":{"label":"View Menu","href":"#menu"},
+--      "secondaryCta":{"label":"Our Story","href":"#story"},
+--      "alignment":"center",
+--      "backgroundImage":"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop"
+--    }'
+--);
+--
+---- 4. CONTENT (Philosophy)
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'CONTENT',
+--    'content_v1',
+--    2,
+--    '{
+--      "title":"Our Philosophy",
+--      "description":"We believe that food is an experience, not just a meal. Our chefs source only the freshest produce from local farmers to bring you dishes that sing with flavor.",
+--      "layout":"grid",
+--      "features":[]
+--    }'
+--);
+--
+---- 5. CONTENT (Signature Dishes)
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'CONTENT',
+--    'content_v1',
+--    3,
+--    '{
+--      "title":"Signature Dishes",
+--      "description":"Curated by Executive Chef Marco.",
+--      "layout":"grid",
+--      "features":[
+--        {"title":"Truffle Pasta","description":"Hand-made tagliatelle with shaved black truffles and parmesan cream."},
+--        {"title":"Wagyu Steak","description":"A5 Japanese Wagyu served with roasted garlic mash and seasonal greens."},
+--        {"title":"Seafood Risotto","description":"Arborio rice slow-cooked with saffron, scallops, and tiger prawns."},
+--        {"title":"Classic Tiramisu","description":"Traditional recipe with espresso-soaked ladyfingers and mascarpone."},
+--        {"title":"Burrata Salad","description":"Fresh burrata cheese with heirloom tomatoes and basil pesto."},
+--        {"title":"Lobster Bisque","description":"Rich and creamy soup made with fresh Atlantic lobster."}
+--      ]
+--    }'
+--);
+--
+---- 6. HERO (Farm to Table)
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'HERO',
+--    'hero_v1',
+--    4,
+--    '{
+--      "headline":"Farm to Table Freshness",
+--      "subheadline":"We partner with over 20 local farms to ensure every ingredient on your plate is sustainable, organic, and harvested at peak ripeness.",
+--      "primaryCta":{"label":"Meet Our Producers","href":"#partners"},
+--      "alignment":"left"
+--    }'
+--);
+--
+---- 7. CONTENT (Private Dining)
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'CONTENT',
+--    'content_v1',
+--    5,
+--    '{
+--      "title":"Private Dining & Events",
+--      "description":"Host your next celebration with us.",
+--      "layout":"grid",
+--      "features":[
+--        {"title":"The Wine Cellar","description":"Intimate seating for up to 12 guests surrounded by our vintage collection."},
+--        {"title":"The Garden Terrace","description":"Al fresco dining for up to 40 guests, perfect for summer evenings."},
+--        {"title":"Full Buyout","description":"Reserve the entire restaurant for weddings and corporate galas."}
+--      ]
+--    }'
+--);
+--
+---- 8. HERO (Atmosphere)
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'HERO',
+--    'hero_v1',
+--    6,
+--    '{
+--      "headline":"An Atmosphere Like No Other",
+--      "subheadline":"Immerse yourself in our warm, rustic elegance. The perfect setting for romantic dates or family gatherings.",
+--      "secondaryCta":{"label":"View Gallery","href":"#gallery"},
+--      "alignment":"center",
+--      "backgroundImage":"https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974"
+--    }'
+--);
+--
+---- 9. CONTENT (Reviews)
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'CONTENT',
+--    'content_v1',
+--    7,
+--    '{
+--      "title":"Guest Reviews",
+--      "description":"Don''t just take our word for it.",
+--      "layout":"grid",
+--      "features":[
+--        {"title":"The Food Critic","description":"⭐⭐⭐⭐⭐ ''The best pasta I have had outside of Rome. A true gem.''"},
+--        {"title":"Sarah J.","description":"⭐⭐⭐⭐⭐ ''Hostess was wonderful, atmosphere was perfect. Highly recommend the steak.''"},
+--        {"title":"Local Guide","description":"⭐⭐⭐⭐⭐ ''Incredible wine list and even better desserts. Will be back!''"}
+--      ]
+--    }'
+--);
+--
+---- 10. CTA
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'CTA',
+--    'cta_v1',
+--    8,
+--    '{
+--      "title":"Ready for an Unforgettable Meal?",
+--      "description":"Tables fill up fast on weekends. Secure your reservation today.",
+--      "buttonText":"Reserve a Table",
+--      "buttonLink":"#reserve"
+--    }'
+--);
+--
+---- 11. FOOTER
+--INSERT INTO template_module_template_section (
+--    template_id, section_type, variant, position, config_json
+--) VALUES (
+--    @template_id,
+--    'FOOTER',
+--    'footer_v1',
+--    9,
+--    '{
+--      "brandName":"Bistro 55",
+--      "description":"123 Culinary Ave, Food District, NY 10012 | (555) 123-4567",
+--      "copyrightText":"© 2024 Bistro 55 Group.",
+--      "columns":[
+--        {
+--          "title":"Hours",
+--          "links":[
+--            {"label":"Mon-Thu: 5pm - 10pm","href":"#"},
+--            {"label":"Fri-Sat: 5pm - 11pm","href":"#"},
+--            {"label":"Sunday: Closed","href":"#"}
+--          ]
+--        },
+--        {
+--          "title":"Connect",
+--          "links":[
+--            {"label":"Instagram","href":"#"},
+--            {"label":"Facebook","href":"#"},
+--            {"label":"TripAdvisor","href":"#"}
+--          ]
+--        }
+--      ]
+--    }'
+--);

@@ -24,6 +24,7 @@ export interface FooterV1Config {
     columnLinkStyles?: React.CSSProperties[][];
     copyrightText?: string;
     copyrightStyles?: React.CSSProperties;
+    sectionBackgroundImage?: string;
     sectionBackground?: string;
     sectionBackgroundOpacity?: number;
     paddingTop?: number;
@@ -117,13 +118,21 @@ export function FooterV1({ config, onConfigChange, domain }: FooterV1Props) {
         >
             {/* Background decoration */}
             <div className="absolute inset-0 z-0">
+                {/* Background Image Layer */}
+                {config.sectionBackgroundImage && (
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center transition-all"
+                        style={{ backgroundImage: `url(${config.sectionBackgroundImage})` }}
+                    />
+                )}
+
                 {/* Custom Background Color Layer */}
                 {config.sectionBackground && config.sectionBackground !== "transparent" && (
                     <div 
                         className="absolute inset-0 transition-colors"
                         style={{ 
                             backgroundColor: config.sectionBackground,
-                            opacity: config.sectionBackgroundOpacity ?? 1
+                            opacity: config.sectionBackgroundOpacity ?? (config.sectionBackgroundImage ? 0.8 : 1)
                         }}
                     />
                 )}

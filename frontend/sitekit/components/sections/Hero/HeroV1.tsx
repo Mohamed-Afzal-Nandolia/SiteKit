@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import React from "react";
-import { EditableText, EditableLink, useEditor, EditableShape, ImagePicker } from "@/components/editor";
+import { useEditor, EditableShape } from "@/components/editor";
 import type { DecorativeShape } from "@/components/editor/shapeTypes";
 
 export interface HeroV1Config {
@@ -16,6 +15,7 @@ export interface HeroV1Config {
     secondaryCtaStyles?: React.CSSProperties;
     alignment?: "center" | "left";
     backgroundImage?: string; // URL
+    sectionBackgroundImage?: string; // Generic background
     decorativeShapes?: DecorativeShape[];
     paddingTop?: number;
     paddingBottom?: number;
@@ -29,48 +29,21 @@ interface HeroV1Props {
 
 export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
     const { isEditMode } = useEditor();
-    
-    // Helper to transform internal links for public site view
-    const getSiteLink = (href: string) => {
-        if (!domain || !href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
-            return href;
-        }
-        // Avoid double prefixing if already includes domain
-        if (href.startsWith(`/${domain}/`) || href === `/${domain}`) {
-            return href;
-        }
-        const path = href.startsWith("/") ? href : `/${href}`;
-        return `/${domain}${path}`;
-    };
 
     const {
-        headline,
-        headlineStyles = {},
-        subheadline,
-        subheadlineStyles = {},
-        primaryCta,
-        primaryCtaStyles = {},
-        secondaryCta,
-        secondaryCtaStyles = {},
-        alignment = "center",
         backgroundImage,
+        sectionBackgroundImage,
         decorativeShapes = []
     } = config || {};
+
+    // Use either specific backgroundImage or generic sectionBackgroundImage
+    const bgImage = backgroundImage || sectionBackgroundImage;
 
     // Helper to update config
     const updateConfig = (updates: Partial<HeroV1Config>) => {
         if (onConfigChange) {
             onConfigChange({ ...config, ...updates });
         }
-    };
-
-    // Update CTA buttons
-    const updatePrimaryCta = (newLabel: string, newHref: string) => {
-        updateConfig({ primaryCta: { label: newLabel, href: newHref } });
-    };
-
-    const updateSecondaryCta = (newLabel: string, newHref: string) => {
-        updateConfig({ secondaryCta: { label: newLabel, href: newHref } });
     };
 
     // Shape management
@@ -103,11 +76,9 @@ export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
         updateConfig({ decorativeShapes: filtered });
     };
 
-    const alignClass = alignment === "center" ? "text-center items-center" : "text-left items-start";
-
     return (
         <section 
-            className="relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-all duration-300 ease-in-out"
+            className="relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-all duration-300 ease-in-out min-h-[600px]"
             style={{ 
                 paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
                 paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
@@ -117,16 +88,24 @@ export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
             }}
         >
             {/* Background decoration */}
-            <div className="absolute inset-0 z-0">
-                {/* Decorative Shapes */}
-                {decorativeShapes.map((shape) => (
-                    <EditableShape
-                        key={shape.id}
-                        shape={shape}
-                        onUpdate={(updates) => updateShape(shape.id, updates)}
-                        onDelete={() => deleteShape(shape.id)}
-                    />
-                ))}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                 {/* Note: pointer-events-none allows checking clicks on elements below, BUT shapes need pointer events if editable.
+                     The EditableShape component likely handles its own pointer events.
+                     Actually, if this div is z-0, and elements are in ElementOverlay (z-10?), elements will be on top.
+                     But if users want to drag shapes, we need pointer events on shapes.
+                 */}
+                
+                <div className="pointer-events-auto">
+                    {/* Decorative Shapes */}
+                    {decorativeShapes.map((shape) => (
+                        <EditableShape
+                            key={shape.id}
+                            shape={shape}
+                            onUpdate={(updates) => updateShape(shape.id, updates)}
+                            onDelete={() => deleteShape(shape.id)}
+                        />
+                    ))}
+                </div>
 
                 {/* Default shape if no custom shapes */}
                 {decorativeShapes.length === 0 && !backgroundImage && (
@@ -134,17 +113,16 @@ export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
                 )}
 
                 {/* Background image */}
-                {backgroundImage && (
+                {bgImage && (
                     <div
-                        className="absolute inset-0 bg-cover bg-center opacity-10"
-                        style={{ backgroundImage: `url(${backgroundImage})` }}
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${bgImage})` }}
                     />
                 )}
 
-                {/* Edit Mode Controls */}
+                {/* Edit Mode Controls for Shapes */}
                 {isEditMode && (
-                    <div className="absolute bottom-4 right-4 z-10 flex gap-2">
-                        {/* Add Shape Button */}
+                    <div className="absolute bottom-4 right-4 z-10 flex gap-2 pointer-events-auto">
                         <button
                             onClick={addNewShape}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm font-medium h-fit"
@@ -155,78 +133,10 @@ export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
                     </div>
                 )}
             </div>
-
-            <div className={`relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col ${alignClass}`}>
-                {headline && (
-                    <EditableText
-                        value={headline}
-                        onUpdate={(newValue) => updateConfig({ headline: newValue })}
-                        styles={headlineStyles}
-                        onStyleUpdate={(newStyles) => updateConfig({ headlineStyles: newStyles })}
-                        onDelete={() => updateConfig({ headline: undefined })}
-                        as="h1"
-                        className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight text-balance mb-6"
-                        placeholder="Enter headline..."
-                    />
-                )}
-
-                {subheadline && (
-                    <EditableText
-                        value={subheadline}
-                        onUpdate={(newValue) => updateConfig({ subheadline: newValue })}
-                        styles={subheadlineStyles}
-                        onStyleUpdate={(newStyles) => updateConfig({ subheadlineStyles: newStyles })}
-                        onDelete={() => updateConfig({ subheadline: undefined })}
-                        as="p"
-                        className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 text-balance"
-                        placeholder="Enter subheadline..."
-                        multiline
-                    />
-                )}
-
-                <div className="flex flex-wrap gap-4">
-                    {primaryCta && (
-                        isEditMode ? (
-                            <EditableLink
-                                label={primaryCta.label}
-                                href={primaryCta.href}
-                                onUpdate={updatePrimaryCta}
-                                styles={primaryCtaStyles}
-                                onStyleUpdate={(newStyles) => updateConfig({ primaryCtaStyles: newStyles })}
-                                onDelete={() => updateConfig({ primaryCta: undefined })}
-                                className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5"
-                            />
-                        ) : (
-                            <Link
-                                href={getSiteLink(primaryCta.href)}
-                                className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5"
-                            >
-                                {primaryCta.label}
-                            </Link>
-                        )
-                    )}
-                    {secondaryCta && (
-                        isEditMode ? (
-                            <EditableLink
-                                label={secondaryCta.label}
-                                href={secondaryCta.href}
-                                onUpdate={updateSecondaryCta}
-                                styles={secondaryCtaStyles}
-                                onStyleUpdate={(newStyles) => updateConfig({ secondaryCtaStyles: newStyles })}
-                                onDelete={() => updateConfig({ secondaryCta: undefined })}
-                                className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
-                            />
-                        ) : (
-                            <Link
-                                href={getSiteLink(secondaryCta.href)}
-                                className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
-                            >
-                                {secondaryCta.label}
-                            </Link>
-                        )
-                    )}
-                </div>
-            </div>
+            
+            {/* No static content rendered here anymore. 
+                Elements are rendered by SectionRenderer via ElementOverlay. 
+            */}
         </section>
     );
 }

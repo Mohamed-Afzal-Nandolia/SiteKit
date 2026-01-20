@@ -60,11 +60,26 @@ export function SectionRenderer({ section, disableOverlay = false, isFirst = fal
     const sectionId = section.id;
     let parsedConfig: any = {};
     
-    if (sectionId && isEditMode) {
-        // In edit mode, get config from context (includes pending changes)
-        parsedConfig = getSectionConfig(sectionId) || {};
+    if (sectionId && (isEditMode || getSectionConfig)) {
+        // In edit mode OR if we have access to context (Preview Mode), get config from context
+        // getSectionConfig returns null if not found, so we fallback
+        const pendingConfig = getSectionConfig(sectionId);
+        if (pendingConfig) {
+            parsedConfig = pendingConfig;
+        } else {
+             // Fallback to props if context has no data for this section
+            if (configJson) {
+                try {
+                    parsedConfig = JSON.parse(configJson);
+                } catch (e) { }
+            } else if (typeof config === "string") {
+                 try { parsedConfig = JSON.parse(config); } catch (e) { }
+            } else {
+                parsedConfig = config || {};
+            }
+        }
     } else {
-        // Not in edit mode or no section id, parse from props
+        // pure read-only mode (published site)
         if (configJson) {
             try {
                 parsedConfig = JSON.parse(configJson);

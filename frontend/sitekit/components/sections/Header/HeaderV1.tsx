@@ -13,6 +13,7 @@ export interface HeaderV1Config {
     navLinks?: { label: string; href: string; styles?: React.CSSProperties }[];
     actionButton?: { label: string; href: string; variant?: "primary" | "secondary" | "outline"; styles?: React.CSSProperties };
     elements?: SectionElement[];
+    sectionBackgroundImage?: string;
     sectionBackground?: string;
     sectionBackgroundOpacity?: number;
     paddingTop?: number;
@@ -56,6 +57,7 @@ export function HeaderV1({ config, onConfigChange, domain }: HeaderV1Props) {
         actionButton,
         elements = [],
         sectionBackground,
+        sectionBackgroundImage,
         sectionBackgroundOpacity
     } = config || {};
 
@@ -112,13 +114,21 @@ export function HeaderV1({ config, onConfigChange, domain }: HeaderV1Props) {
                     style={{ opacity: (!sectionBackground || sectionBackground === "transparent") ? (sectionBackgroundOpacity ?? 0.8) : 0 }}
                 />
                 
+                {/* Background Image Layer */}
+                {sectionBackgroundImage && (
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center transition-all"
+                        style={{ backgroundImage: `url(${sectionBackgroundImage})` }}
+                    />
+                )}
+                
                 {/* Custom Background Color Layer */}
                 {sectionBackground && sectionBackground !== "transparent" && (
                     <div 
                         className="absolute inset-0 transition-colors"
                         style={{ 
                             backgroundColor: sectionBackground,
-                            opacity: sectionBackgroundOpacity ?? 1
+                            opacity: sectionBackgroundOpacity ?? (sectionBackgroundImage ? 0.8 : 1)
                         }}
                     />
                 )}
