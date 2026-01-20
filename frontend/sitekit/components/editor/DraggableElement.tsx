@@ -249,7 +249,7 @@ export function DraggableElement({
                         const blobUrl = URL.createObjectURL(blob);
                         
                         // Open in new tab (browser handles download/view)
-                        window.open(blobUrl, "_blank");
+                        window.open(blobUrl, element.newTab ? "_blank" : "_self");
 
                         // Cleanup
                         setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
