@@ -72,7 +72,7 @@ export function SectionToolbar({
         <>
             {/* Toolbar UI - only visible when isVisible is true */}
             {isVisible && (
-                <div className="absolute top-2 right-2 z-50">
+                <div className="absolute top-2 right-2 z-[100]">
                     {/* Main Toggle Button */}
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
