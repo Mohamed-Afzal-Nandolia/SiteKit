@@ -19,10 +19,24 @@ export interface CtaV1Config {
 interface CtaV1Props {
     config: CtaV1Config;
     onConfigChange?: (newConfig: CtaV1Config) => void;
+    domain?: string;
 }
 
-export function CtaV1({ config, onConfigChange }: CtaV1Props) {
+export function CtaV1({ config, onConfigChange, domain }: CtaV1Props) {
     const { isEditMode } = useEditor();
+
+    // Helper to transform internal links for public site view
+    const getSiteLink = (href: string) => {
+        if (!domain || !href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
+            return href;
+        }
+        // Avoid double prefixing if already includes domain
+        if (href.startsWith(`/${domain}/`) || href === `/${domain}`) {
+            return href;
+        }
+        const path = href.startsWith("/") ? href : `/${href}`;
+        return `/${domain}${path}`;
+    };
     
     const {
         title,
@@ -101,7 +115,7 @@ export function CtaV1({ config, onConfigChange }: CtaV1Props) {
                         />
                     ) : (
                         <Link
-                            href={buttonLink || "#"}
+                            href={getSiteLink(buttonLink || "#")}
                             className="inline-block px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:bg-blue-50 transition-colors shadow-xl"
                         >
                             {buttonText}

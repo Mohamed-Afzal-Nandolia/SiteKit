@@ -472,6 +472,12 @@ export function EditableLink({
     };
     
     const handleStyleUpdate = (updates: Partial<SectionElement>) => {
+        // Handle href update separately - call onUpdate directly
+        if (updates.href !== undefined) {
+            setLocalHref(updates.href);
+            onUpdate(localLabel, updates.href);
+        }
+
         if (!onStyleUpdate) return;
         
         const newStyles: any = { ...styles };
@@ -533,7 +539,7 @@ export function EditableLink({
         type: "button",
         content: localLabel,
         x: 0, y: 0,
-        href: href,
+        href: localHref,
         backgroundColor: (styles?.backgroundColor as string) || "transparent",
         textColor: getComputedColor(),
         fontSize: getComputedFontSize(),

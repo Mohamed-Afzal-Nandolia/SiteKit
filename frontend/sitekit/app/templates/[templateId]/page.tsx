@@ -142,7 +142,7 @@ export default function TemplatePreviewPage() {
                 const pageRes = await createPage({
                     site: { id: newSiteId, user: { id: user.userId } },
                     name: "Home",
-                    slug: "/",
+                    slug: "home",
                 });
                 if (!pageRes.data?.id) throw new Error("Failed to create home page");
                 homePageId = pageRes.data.id;
@@ -175,7 +175,7 @@ export default function TemplatePreviewPage() {
             }
 
             setCreationStatus("Done! Redirecting...");
-            router.push(`/${finalDomain}/edit`);
+            router.push(`/${finalDomain}/home/edit`);
 
         } catch (err) {
             console.error(err);

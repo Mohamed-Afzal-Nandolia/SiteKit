@@ -10,4 +10,5 @@ export { ElementStylePanel } from "./ElementStylePanel";
 export { DraggableElement, ElementOverlay } from "./DraggableElement";
 export { AssetManager } from "./AssetManager";
 export { AssetPicker, ImagePicker } from "./AssetPicker";
+export { PageManager } from "./PageManager";
 export * from "./elementTypes";

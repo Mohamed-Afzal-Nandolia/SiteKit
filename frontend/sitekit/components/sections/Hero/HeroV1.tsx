@@ -22,10 +22,24 @@ export interface HeroV1Config {
 interface HeroV1Props {
     config: HeroV1Config;
     onConfigChange?: (newConfig: HeroV1Config) => void;
+    domain?: string;
 }
 
-export function HeroV1({ config, onConfigChange }: HeroV1Props) {
+export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
     const { isEditMode } = useEditor();
+    
+    // Helper to transform internal links for public site view
+    const getSiteLink = (href: string) => {
+        if (!domain || !href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
+            return href;
+        }
+        // Avoid double prefixing if already includes domain
+        if (href.startsWith(`/${domain}/`) || href === `/${domain}`) {
+            return href;
+        }
+        const path = href.startsWith("/") ? href : `/${href}`;
+        return `/${domain}${path}`;
+    };
 
     const {
         headline,
@@ -173,7 +187,7 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
                             />
                         ) : (
                             <Link
-                                href={primaryCta.href}
+                                href={getSiteLink(primaryCta.href)}
                                 className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5"
                             >
                                 {primaryCta.label}
@@ -193,7 +207,7 @@ export function HeroV1({ config, onConfigChange }: HeroV1Props) {
                             />
                         ) : (
                             <Link
-                                href={secondaryCta.href}
+                                href={getSiteLink(secondaryCta.href)}
                                 className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
                             >
                                 {secondaryCta.label}

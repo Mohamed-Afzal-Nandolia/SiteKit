@@ -20,13 +20,33 @@ export interface HeaderV1Config {
 interface HeaderV1Props {
     config: HeaderV1Config;
     onConfigChange?: (newConfig: HeaderV1Config) => void;
+    domain?: string;
 }
 
-export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
+export function HeaderV1({ config, onConfigChange, domain }: HeaderV1Props) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isEditMode } = useEditor();
     const sectionRef = React.useRef<HTMLElement>(null);
     
+    // Helper to transform internal links for public site view
+    const getSiteLink = (href: string) => {
+        // If no domain provided (editor mode) or external link, return as is
+        if (!domain || !href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
+            return href;
+        }
+        
+        // Avoid double prefixing if already includes domain
+        if (href.startsWith(`/${domain}/`) || href === `/${domain}`) {
+            return href;
+        }
+
+        // Ensure href starts with /
+        const path = href.startsWith("/") ? href : `/${href}`;
+        
+        // Return domain prefixed link
+        return `/${domain}${path}`;
+    };
+
     const { 
         logoText,
         logoStyles = {},
@@ -129,7 +149,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                         ) : (
                             <Link 
                                 key={idx} 
-                                href={link.href}
+                                href={getSiteLink(link.href)}
                                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                                 {link.label}
@@ -158,7 +178,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                                 />
                             ) : (
                                 <Link
-                                    href={actionButton.href}
+                                    href={getSiteLink(actionButton.href)}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                         actionButton.variant === "outline" 
                                             ? "border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -210,7 +230,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                         {navLinks.map((link, idx) => (
                             <Link 
                                 key={idx} 
-                                href={link.href}
+                                href={getSiteLink(link.href)}
                                 onClick={() => setIsMenuOpen(false)}
                                 className="block text-base font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
@@ -222,7 +242,7 @@ export function HeaderV1({ config, onConfigChange }: HeaderV1Props) {
                     {actionButton && (
                          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                              <Link
-                                href={actionButton.href}
+                                href={getSiteLink(actionButton.href)}
                                 onClick={() => setIsMenuOpen(false)}
                                 className={`block w-full text-center px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                                     actionButton.variant === "outline" 

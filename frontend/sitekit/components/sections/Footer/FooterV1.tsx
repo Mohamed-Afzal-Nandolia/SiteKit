@@ -31,10 +31,24 @@ export interface FooterV1Config {
 interface FooterV1Props {
     config: FooterV1Config;
     onConfigChange?: (newConfig: FooterV1Config) => void;
+    domain?: string;
 }
 
-export function FooterV1({ config, onConfigChange }: FooterV1Props) {
+export function FooterV1({ config, onConfigChange, domain }: FooterV1Props) {
     const { isEditMode } = useEditor();
+
+    // Helper to transform internal links for public site view
+    const getSiteLink = (href: string) => {
+        if (!domain || !href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
+            return href;
+        }
+        // Avoid double prefixing if already includes domain
+        if (href.startsWith(`/${domain}/`) || href === `/${domain}`) {
+            return href;
+        }
+        const path = href.startsWith("/") ? href : `/${href}`;
+        return `/${domain}${path}`;
+    };
     
     const {
         brandName,
@@ -169,7 +183,7 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                                             />
                                         ) : (
                                             <Link 
-                                                href={link.href}
+                                                href={getSiteLink(link.href)}
                                                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                             >
                                                 {link.label}

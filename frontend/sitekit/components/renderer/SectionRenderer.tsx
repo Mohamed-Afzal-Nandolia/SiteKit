@@ -10,7 +10,7 @@ import { CtaV1 } from "../sections/CTA/CtaV1";
 import { FooterV1 } from "../sections/Footer/FooterV1";
 
 // Registry Type
-type ComponentRegistry = Record<string, Record<string, React.FC<{ config: any; onConfigChange?: (newConfig: any) => void }>>>;
+type ComponentRegistry = Record<string, Record<string, React.FC<{ config: any; onConfigChange?: (newConfig: any) => void; domain?: string }>>>;
 
 // Registry Mapping
 const SECTION_REGISTRY: ComponentRegistry = {
@@ -36,7 +36,7 @@ const SECTION_REGISTRY: ComponentRegistry = {
     }
 };
 
-export function SectionRenderer({ section, disableOverlay = false, isFirst = false }: { section: PageSectionDTO, disableOverlay?: boolean, isFirst?: boolean }) {
+export function SectionRenderer({ section, disableOverlay = false, isFirst = false, domain }: { section: PageSectionDTO, disableOverlay?: boolean, isFirst?: boolean, domain?: string }) {
     const { sectionType, variant, config, configJson } = section;
     const { isEditMode, updateSectionConfig, getSectionConfig } = useEditor();
 
@@ -99,7 +99,7 @@ export function SectionRenderer({ section, disableOverlay = false, isFirst = fal
             className="relative"
             style={sectionBackground && sectionBackground !== "transparent" ? { backgroundColor: sectionBackground } : {}}
         >
-            <Component config={parsedConfig} onConfigChange={handleConfigChange} />
+            <Component config={parsedConfig} onConfigChange={handleConfigChange} domain={domain} />
             
             {/* Render Overlay Elements for Public View / Read-Only */}
             {elements.length > 0 && !disableOverlay && (

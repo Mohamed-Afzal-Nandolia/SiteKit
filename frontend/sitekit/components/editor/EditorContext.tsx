@@ -55,6 +55,11 @@ interface EditorContextState {
     canUndo: boolean;
     undo: () => void;
     clearHistory: () => void;
+    // Site Data
+    pages: any[];
+    setPages: (pages: any[]) => void;
+    siteDomain: string;
+    setSiteDomain: (domain: string) => void;
 }
 
 // Default context value
@@ -80,6 +85,10 @@ const defaultContextValue: EditorContextState = {
     canUndo: false,
     undo: () => {},
     clearHistory: () => {},
+    pages: [],
+    setPages: () => {},
+    siteDomain: "",
+    setSiteDomain: () => {},
 };
 
 // Create context
@@ -112,6 +121,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     // History stack for undo functionality (max 50 entries)
     const [history, setHistory] = useState<HistorySnapshot[]>([]);
     const MAX_HISTORY = 50;
+
+    // Additional Site Data
+    const [pages, setPages] = useState<any[]>([]);
+    const [siteDomain, setSiteDomain] = useState<string>("");
     
     // Debounce timer ref for history saving
     const historyTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -581,6 +594,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         canUndo,
         undo,
         clearHistory: useCallback(() => setHistory([]), []),
+        pages,
+        setPages,
+        siteDomain,
+        setSiteDomain,
     };
 
     return (

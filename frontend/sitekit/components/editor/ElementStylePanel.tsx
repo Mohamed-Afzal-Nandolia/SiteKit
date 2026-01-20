@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useEditor } from "./EditorContext";
 import type { SectionElement } from "./elementTypes";
 import { COLOR_PRESETS, FONT_OPTIONS, FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "./elementTypes";
 
@@ -12,6 +13,7 @@ interface ElementStylePanelProps {
 }
 
 export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchorRect }: ElementStylePanelProps) {
+    const { pages, siteDomain } = useEditor();
     const [activeTab, setActiveTab] = useState<"format" | "colors" | "button">("format");
     const [showTextColorPicker, setShowTextColorPicker] = useState(false);
     const [showBgColorPicker, setShowBgColorPicker] = useState(false);
@@ -21,6 +23,16 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
     const [verticalPosition, setVerticalPosition] = useState<"top" | "bottom">("top");
     const [mounted, setMounted] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    
+    // Link type state (internal vs external)
+    const [linkType, setLinkType] = useState<"external" | "internal">("external");
+
+    // Initialize link type
+    useEffect(() => {
+        if (element.href && siteDomain && element.href.includes(`/${siteDomain}/`)) {
+            setLinkType("internal");
+        }
+    }, [element.href, siteDomain]);
     
     const panelWidth = 320;
     const panelGap = 12;
@@ -586,15 +598,57 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                     {activeTab === "button" && element.type === "button" && (
                         <div className="space-y-4">
                             {/* Link URL */}
+                            {/* Link URL */}
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1">Link URL</label>
-                                <input
-                                    type="text"
-                                    value={element.href || ""}
-                                    onChange={(e) => onUpdate({ href: e.target.value })}
-                                    placeholder="https://..."
-                                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                />
+                                <label className="block text-xs text-slate-400 mb-1">Link Destination</label>
+                                
+                                {/* Link Type Toggle */}
+                                <div className="flex bg-slate-700 p-1 rounded-lg mb-2">
+                                    <button
+                                        onClick={() => setLinkType("internal")}
+                                        className={`flex-1 py-1 text-xs rounded-md transition-colors ${
+                                            linkType === "internal" ? "bg-slate-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                                        }`}
+                                    >
+                                        Page
+                                    </button>
+                                    <button
+                                        onClick={() => setLinkType("external")}
+                                        className={`flex-1 py-1 text-xs rounded-md transition-colors ${
+                                            linkType === "external" ? "bg-slate-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                                        }`}
+                                    >
+                                        Custom URL
+                                    </button>
+                                </div>
+
+                                {linkType === "internal" ? (
+                                    <select
+                                        value={element.href?.split('/').pop() || ""} // Try to extract slug
+                                        onChange={(e) => {
+                                            const slug = e.target.value;
+                                            if (slug && siteDomain) {
+                                                onUpdate({ href: `/${siteDomain}/${slug}` });
+                                            }
+                                        }}
+                                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">Select a page...</option>
+                                        {pages.map(page => (
+                                            <option key={page.id} value={page.slug}>
+                                                {page.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={element.href || ""}
+                                        onChange={(e) => onUpdate({ href: e.target.value })}
+                                        placeholder="https://..."
+                                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                    />
+                                )}
                             </div>
 
                             {/* Padding */}

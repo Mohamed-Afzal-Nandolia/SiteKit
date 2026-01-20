@@ -25,9 +25,10 @@ export interface ContentV1Config {
 interface ContentV1Props {
     config: ContentV1Config;
     onConfigChange?: (newConfig: ContentV1Config) => void;
+    domain?: string;
 }
 
-export function ContentV1({ config, onConfigChange }: ContentV1Props) {
+export function ContentV1({ config, onConfigChange, domain }: ContentV1Props) {
     const { isEditMode } = useEditor();
     
     const {
