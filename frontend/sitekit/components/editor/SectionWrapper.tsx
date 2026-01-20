@@ -37,39 +37,44 @@ export function SectionWrapper({
     const elements = currentConfig.elements || [];
     const sectionBackground = currentConfig.sectionBackground;
     
+    // Keep refs for handlers to avoid stale closures
+    const currentConfigRef = useRef(currentConfig);
+    const elementsRef = useRef(elements);
+    
+    // Update refs on render
+    currentConfigRef.current = currentConfig;
+    elementsRef.current = elements;
+    
     // Debug: log elements on render
-    console.log("Section", sectionId, "config:", currentConfig, "elements:", elements);
+    // console.log("Section", sectionId, "config:", currentConfig, "elements:", elements);
 
     // Add a new element
     const handleAddElement = (element: SectionElement) => {
         if (!sectionId) return;
         
-        console.log("Adding element:", element);
-        console.log("Current elements:", elements);
+        const currentElements = elementsRef.current;
+        const config = currentConfigRef.current;
         
-        const updatedElements = [...elements, element];
+        const updatedElements = [...currentElements, element];
         updateSectionConfig(sectionId, {
-            ...currentConfig,
+            ...config,
             elements: updatedElements,
         });
-        
-        console.log("Updated elements:", updatedElements);
     };
 
     // Update an element
     const handleUpdateElement = (elementId: string, updates: Partial<SectionElement>) => {
         if (!sectionId) return;
         
-        console.log("Updating element:", elementId, "with:", updates);
+        const currentElements = elementsRef.current;
+        const config = currentConfigRef.current;
         
-        const updatedElements = elements.map((el) =>
+        const updatedElements = currentElements.map((el) =>
             el.id === elementId ? { ...el, ...updates } : el
         );
         
-        console.log("New elements array:", updatedElements);
-        
         updateSectionConfig(sectionId, {
-            ...currentConfig,
+            ...config,
             elements: updatedElements,
         });
     };
@@ -78,9 +83,12 @@ export function SectionWrapper({
     const handleDeleteElement = (elementId: string) => {
         if (!sectionId) return;
         
-        const updatedElements = elements.filter((el) => el.id !== elementId);
+        const currentElements = elementsRef.current;
+        const config = currentConfigRef.current;
+        
+        const updatedElements = currentElements.filter((el) => el.id !== elementId);
         updateSectionConfig(sectionId, {
-            ...currentConfig,
+            ...config,
             elements: updatedElements,
         });
     };
@@ -89,8 +97,10 @@ export function SectionWrapper({
     const handleBackgroundChange = (color: string) => {
         if (!sectionId) return;
         
+        const config = currentConfigRef.current;
+        
         updateSectionConfig(sectionId, {
-            ...currentConfig,
+            ...config,
             sectionBackground: color,
         });
     };
@@ -227,6 +237,7 @@ export function SectionWrapper({
                 isEditMode={isEditMode}
                 onUpdateElement={handleUpdateElement}
                 onDeleteElement={handleDeleteElement}
+                isFirst={isFirst}
             />
         </div>
     );

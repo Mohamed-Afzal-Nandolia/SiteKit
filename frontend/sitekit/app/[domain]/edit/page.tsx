@@ -30,7 +30,10 @@ function EditorContent({
         pendingDeletions,
         markSectionForDeletion,
         moveSection,
-        addSection
+        addSection,
+        canUndo,
+        undo,
+        clearHistory
     } = useEditor();
     
     const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -47,6 +50,13 @@ function EditorContent({
     // Handle save - pass both userId and pageId for reorder API
     const handleSave = async () => {
         const pageId = currentPage?.id || 0;
+        
+        if (!userId) {
+            console.error("No userId found in handleSave aborting");
+            setSaveMessage({ type: "error", text: "Authentication error: Please log in again." });
+            return;
+        }
+
         const result = await saveAllChanges(userId, pageId);
         if (result.success) {
             setSaveMessage({ type: "success", text: "Changes saved!" });
@@ -60,6 +70,7 @@ function EditorContent({
     // Handle cancel - discard all pending changes
     const handleCancel = () => {
         setSections(initialSections);
+        clearHistory(); // Clear undo history when canceling
         setSaveMessage({ type: "success", text: "Changes discarded" });
         setTimeout(() => setSaveMessage(null), 2000);
     };
@@ -70,10 +81,7 @@ function EditorContent({
 
     // Handle add section
     const handleAddSection = async (sectionType: SectionType, variant: string) => {
-        console.log("handleAddSection called with:", { sectionType, variant, currentPageId: currentPage?.id });
-
         if (!currentPage?.id) {
-            console.error("Missing currentPage.id");
             setSaveMessage({ type: "error", text: "Error: Page ID not found" });
             return;
         }
@@ -159,9 +167,6 @@ function EditorContent({
                 break;
         }
 
-        console.log("Generated defaultConfig:", defaultConfig);
-        console.log("Calling addSection context method...");
-
         try {
             // Optimistic update via context
             await addSection(
@@ -172,8 +177,6 @@ function EditorContent({
                 defaultConfig // Use the default config
             );
             
-            console.log("addSection returned (async/sync)");
-
             // Reset insert position
             setInsertPosition(0);
             
@@ -295,6 +298,21 @@ function EditorContent({
                         </button>
                     </div>
 
+                    {/* Undo Button - only show when there are undoable actions */}
+                    {isEditMode && canUndo && (
+                        <button 
+                            onClick={undo}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 hover:text-white transition-colors cursor-pointer"
+                            title="Undo last action"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 7v6h6" />
+                                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                            </svg>
+                            Undo
+                        </button>
+                    )}
+
                     {/* Cancel Button - only show when there are pending changes */}
                     {hasPendingChanges && (
                         <button 
@@ -364,7 +382,7 @@ function EditorContent({
                                         isFirst={index === 0}
                                         isLast={index === sortedSections.length - 1}
                                     >
-                                        <SectionRenderer section={section} />
+                                        <SectionRenderer section={section} disableOverlay={true} />
                                     </SectionWrapper>
                                     {/* Add Section button between sections */}
                                     {isEditMode && index < sortedSections.length - 1 && (
@@ -459,7 +477,6 @@ export default function EditorPage() {
                     homePage = pagesRes.data[0];
                 } else {
                     // No pages found - Create Default 'Home' Page
-                    console.log("No pages found, creating default Home page...");
                     const createParams = {
                         site: { id: foundSite.id, user: { id: user.userId } },
                         name: "Home",
@@ -469,7 +486,6 @@ export default function EditorPage() {
                     const createRes = await createPage(createParams);
                     if (createRes.data) {
                         homePage = createRes.data;
-                        console.log("Created default Home page:", homePage);
                     } else {
                         throw new Error(createRes.error || "Failed to create default page");
                     }

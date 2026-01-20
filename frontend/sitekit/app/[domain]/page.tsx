@@ -36,6 +36,16 @@ export default function SiteViewPage() {
                 if (res.data) {
                     const found = res.data.find(s => s.domain === domainOrId || s.id?.toString() === domainOrId);
                     if (found) {
+                        // Strict Access Control: Only allow PUBLISHED sites
+                        if (found.siteStatus !== "PUBLISHED") {
+                            // If user is owner, they might expect to see it, but requirements say "should not be accessible"
+                            // The editor uses /edit, so this public view should indeed be blocked.
+                            setError("This site is currently not available.");
+                            setSite(null);
+                            setIsLoading(false);
+                            return;
+                        }
+
                         setSite(found);
                         
                         // 2. Fetch Home Page
@@ -99,8 +109,8 @@ export default function SiteViewPage() {
         <div className="min-h-screen bg-white dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100">
             <main>
                 {sections.length > 0 ? (
-                    sections.map((section) => (
-                        <SectionRenderer key={section.id} section={section} />
+                    sections.map((section, index) => (
+                        <SectionRenderer key={section.id} section={section} isFirst={index === 0} />
                     ))
                 ) : (
                     <div className="py-20 text-center text-slate-500">
