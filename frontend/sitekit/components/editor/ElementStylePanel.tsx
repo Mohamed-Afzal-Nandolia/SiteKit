@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { useEditor } from "./EditorContext";
 import type { SectionElement } from "./elementTypes";
 import { COLOR_PRESETS, FONT_OPTIONS, FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "./elementTypes";
+import { AssetPicker } from "./AssetPicker";
+import type { AssetDTO } from "@/api";
 
 interface ElementStylePanelProps {
     element: SectionElement;
@@ -25,14 +27,16 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     
     // Link type state (internal vs external)
-    const [linkType, setLinkType] = useState<"external" | "internal">("external");
+    const [linkType, setLinkType] = useState<"external" | "internal" | "file">("external");
 
     // Initialize link type
     useEffect(() => {
-        if (element.href && siteDomain && element.href.includes(`/${siteDomain}/`)) {
+        if (element.fileName) {
+            setLinkType("file");
+        } else if (element.href && siteDomain && element.href.includes(`/${siteDomain}/`)) {
             setLinkType("internal");
         }
-    }, [element.href, siteDomain]);
+    }, [element.href, siteDomain, element.fileName]);
     
     const panelWidth = 320;
     const panelGap = 12;
@@ -620,9 +624,41 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                     >
                                         Custom URL
                                     </button>
+                                    <button
+                                        onClick={() => setLinkType("file")}
+                                        className={`flex-1 py-1 text-xs rounded-md transition-colors ${
+                                            linkType === "file" ? "bg-slate-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                                        }`}
+                                    >
+                                        File
+                                    </button>
                                 </div>
 
-                                {linkType === "internal" ? (
+                                {linkType === "file" ? (
+                                    <div className="space-y-2">
+                                        <AssetPicker
+                                            value={element.fileName || element.href}
+                                            onChange={(url, asset) => {
+                                                const updates: Partial<SectionElement> = { 
+                                                    href: url,
+                                                    newTab: true // Always open files in new tab
+                                                };
+                                                if (asset) {
+                                                    updates.fileName = asset.name;
+                                                    updates.fileType = asset.mimeType;
+                                                }
+                                                onUpdate(updates);
+                                            }}
+                                            placeholder="Select a file..."
+                                            label="Attach File"
+                                        />
+                                        {element.fileName && (
+                                            <p className="text-[10px] text-slate-400">
+                                                Attached: {element.fileName}
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : linkType === "internal" ? (
                                     <select
                                         value={element.href?.split('/').pop() || ""} // Try to extract slug
                                         onChange={(e) => {

@@ -300,6 +300,7 @@ export function AssetManager({
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div
+                data-asset-manager="true"
                 className="bg-slate-800 text-white rounded-2xl shadow-2xl border border-slate-700 w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >

@@ -13,6 +13,9 @@ export interface SectionElement {
     content: string;
     href?: string;  // For buttons
     newTab?: boolean;
+    fileName?: string; // For attached files
+    fileType?: string; // MIME type
+
 
     // Typography
     fontSize: number;

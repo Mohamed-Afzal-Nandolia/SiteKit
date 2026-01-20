@@ -58,7 +58,6 @@ export function AssetPicker({
                     title="Open Asset Manager"
                 >
                     <span>{filterType ? getAssetTypeIcon(filterType) : "📁"}</span>
-                    <span className="hidden sm:inline">Browse</span>
                 </button>
             </div>
 

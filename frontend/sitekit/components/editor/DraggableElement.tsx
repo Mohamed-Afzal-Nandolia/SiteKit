@@ -139,6 +139,11 @@ export function DraggableElement({
                 return; // Don't close if clicking the style panel
             }
 
+            // Check if click is inside Asset Manager (portal)
+            if (target.closest('[data-asset-manager="true"]')) {
+                return; // Don't close if interacting with asset manager
+            }
+
             setIsSelected(false);
             setIsEditing(false);
         };
@@ -230,6 +235,30 @@ export function DraggableElement({
         if (!isEditMode) {
             // In view mode, buttons should navigate
             if (element.type === "button" && element.href) {
+                // Check if it's a data URL (file attachment)
+                if (element.href.startsWith("data:") && element.fileType) {
+                    try {
+                        const base64Data = element.href.split(",")[1];
+                        const byteCharacters = atob(base64Data);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: element.fileType });
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        // Open in new tab (browser handles download/view)
+                        window.open(blobUrl, "_blank");
+
+                        // Cleanup
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+                        return;
+                    } catch (e) {
+                        console.error("Failed to open file", e);
+                    }
+                }
+
                 if (element.newTab) {
                     window.open(element.href, '_blank', 'noopener,noreferrer');
                 } else {
