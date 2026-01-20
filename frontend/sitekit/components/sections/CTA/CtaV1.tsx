@@ -14,6 +14,8 @@ export interface CtaV1Config {
     buttonStyles?: React.CSSProperties;
     sectionBackground?: string;
     sectionBackgroundOpacity?: number;
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 interface CtaV1Props {
@@ -61,7 +63,16 @@ export function CtaV1({ config, onConfigChange, domain }: CtaV1Props) {
     };
 
     return (
-        <section className="relative py-20 bg-blue-600 dark:bg-blue-700 overflow-hidden transition-colors">
+        <section 
+            className="relative overflow-hidden transition-all duration-300 ease-in-out bg-blue-600 dark:bg-blue-700"
+            style={{ 
+                paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
+                paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
+                // Fallback: apply defaults if specific side is undefined
+                ...(config?.paddingTop === undefined && { paddingTop: '5rem' }),
+                ...(config?.paddingBottom === undefined && { paddingBottom: '5rem' })
+            }}
+        >
             {/* Background decoration */}
             <div className="absolute inset-0 z-0">
                 {/* Custom Background Color Layer */}

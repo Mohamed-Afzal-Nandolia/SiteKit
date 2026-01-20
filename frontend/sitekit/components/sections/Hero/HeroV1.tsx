@@ -17,6 +17,8 @@ export interface HeroV1Config {
     alignment?: "center" | "left";
     backgroundImage?: string; // URL
     decorativeShapes?: DecorativeShape[];
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 interface HeroV1Props {
@@ -104,7 +106,16 @@ export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
     const alignClass = alignment === "center" ? "text-center items-center" : "text-left items-start";
 
     return (
-        <section className="relative py-20 lg:py-32 overflow-hidden bg-slate-50 dark:bg-slate-950">
+        <section 
+            className="relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-all duration-300 ease-in-out"
+            style={{ 
+                paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
+                paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
+                // Fallback: apply defaults if specific side is undefined
+                ...(config?.paddingTop === undefined && { paddingTop: '5rem' }),
+                ...(config?.paddingBottom === undefined && { paddingBottom: '5rem' })
+            }}
+        >
             {/* Background decoration */}
             <div className="absolute inset-0 z-0">
                 {/* Decorative Shapes */}

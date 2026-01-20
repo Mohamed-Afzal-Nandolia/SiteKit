@@ -26,6 +26,8 @@ export interface FooterV1Config {
     copyrightStyles?: React.CSSProperties;
     sectionBackground?: string;
     sectionBackgroundOpacity?: number;
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 interface FooterV1Props {
@@ -103,7 +105,16 @@ export function FooterV1({ config, onConfigChange, domain }: FooterV1Props) {
     };
 
     return (
-        <footer className="relative bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8 overflow-hidden transition-colors">
+        <footer 
+            className="relative bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 ease-in-out"
+            style={{ 
+                paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
+                paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
+                // Fallback: apply defaults if specific side is undefined
+                ...(config?.paddingTop === undefined && { paddingTop: '4rem' }),
+                ...(config?.paddingBottom === undefined && { paddingBottom: '2rem' })
+            }}
+        >
             {/* Background decoration */}
             <div className="absolute inset-0 z-0">
                 {/* Custom Background Color Layer */}

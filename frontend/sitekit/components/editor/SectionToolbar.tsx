@@ -13,6 +13,7 @@ interface SectionToolbarProps {
     onOpenBackgroundImagePicker?: () => void;
     currentBackground?: string;
     currentBackgroundImage?: string;
+
     isVisible: boolean;
 }
 
@@ -23,6 +24,7 @@ export function SectionToolbar({
     onOpenBackgroundImagePicker,
     currentBackground,
     currentBackgroundImage,
+
     isVisible
 }: SectionToolbarProps) {
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
@@ -88,7 +90,7 @@ export function SectionToolbar({
 
                     {/* Expanded Menu */}
                     {isExpanded && (
-                        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[200px]">
+                        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[220px]">
                             {/* Add Text */}
                             <button
                                 onClick={handleAddText}
@@ -144,6 +146,8 @@ export function SectionToolbar({
                                     </div>
                                 </button>
                             )}
+
+
 
                             {/* Background Image */}
                             <button

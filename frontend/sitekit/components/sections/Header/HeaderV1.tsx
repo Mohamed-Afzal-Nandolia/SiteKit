@@ -15,6 +15,8 @@ export interface HeaderV1Config {
     elements?: SectionElement[];
     sectionBackground?: string;
     sectionBackgroundOpacity?: number;
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 interface HeaderV1Props {
@@ -96,7 +98,11 @@ export function HeaderV1({ config, onConfigChange, domain }: HeaderV1Props) {
     return (
         <header 
             ref={sectionRef}
-            className="sticky top-0 z-50 w-full border-b border-white/10"
+            className={`${isEditMode ? 'relative' : 'sticky'} top-0 z-50 w-full border-b border-white/10 transition-all duration-300 ease-in-out`}
+            style={{ 
+                paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
+                paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined
+            }}
         >
             {/* Background Layer */}
             <div className="absolute inset-0 z-0">

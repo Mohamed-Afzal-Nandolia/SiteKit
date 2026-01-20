@@ -20,6 +20,8 @@ export interface ContentV1Config {
     layout?: "grid" | "alternating";
     sectionBackground?: string;
     sectionBackgroundOpacity?: number;
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 interface ContentV1Props {
@@ -71,7 +73,16 @@ export function ContentV1({ config, onConfigChange, domain }: ContentV1Props) {
     };
 
     return (
-        <section className="relative py-20 bg-white dark:bg-slate-900 overflow-hidden transition-colors">
+        <section 
+            className="relative bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 ease-in-out"
+            style={{ 
+                paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
+                paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
+                // Fallback: apply defaults if specific side is undefined
+                ...(config?.paddingTop === undefined && { paddingTop: '5rem' }),
+                ...(config?.paddingBottom === undefined && { paddingBottom: '5rem' })
+            }}
+        >
             {/* Background decoration */}
             <div className="absolute inset-0 z-0">
                 {/* Custom Background Color Layer */}

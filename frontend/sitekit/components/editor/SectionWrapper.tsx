@@ -190,6 +190,86 @@ export function SectionWrapper({
         }
     };
 
+    // Drag-to-resize state
+    const [dragState, setDragState] = useState<{
+        isDragging: boolean;
+        handle: 'top' | 'bottom' | null;
+        startY: number;
+        startPadding: number;
+    }>({
+        isDragging: false,
+        handle: null,
+        startY: 0,
+        startPadding: 0
+    });
+
+    // Handle global mouse move / up for resizing
+    React.useEffect(() => {
+        if (!dragState.isDragging || !dragState.handle || !sectionId) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const dy = e.clientY - dragState.startY;
+            // If dragging top handle: moving down (positive dy) should DECREASE padding
+            // If dragging bottom handle: moving down (positive dy) should INCREASE padding
+            const paddingChange = dragState.handle === 'top' ? -dy : dy;
+            
+            let newPadding = Math.max(0, dragState.startPadding + paddingChange);
+            
+            // Apply step of 5px for easier alignment
+            newPadding = Math.round(newPadding / 5) * 5;
+
+            const updates: Partial<ExtendedSectionConfig> = {};
+            if (dragState.handle === 'top') {
+                updates.paddingTop = newPadding;
+            } else {
+                updates.paddingBottom = newPadding;
+            }
+
+            updateSectionConfig(sectionId, {
+                ...currentConfig,
+                ...updates
+            });
+        };
+
+        const handleMouseUp = () => {
+            setDragState({
+                isDragging: false,
+                handle: null,
+                startY: 0,
+                startPadding: 0
+            });
+            document.body.style.cursor = 'default';
+            document.body.style.userSelect = 'auto'; // Re-enable selection
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [dragState, sectionId, currentConfig, updateSectionConfig]);
+
+    const startResize = (e: React.MouseEvent, handle: 'top' | 'bottom') => {
+        e.stopPropagation();
+        if (!sectionId) return;
+
+        const currentPadding = handle === 'top' 
+            ? (currentConfig.paddingTop ?? 80) // Default 80px (py-20)
+            : (currentConfig.paddingBottom ?? 80);
+
+        setDragState({
+            isDragging: true,
+            handle,
+            startY: e.clientY,
+            startPadding: currentPadding
+        });
+        
+        document.body.style.cursor = 'ns-resize';
+        document.body.style.userSelect = 'none'; // Disable selection
+    };
+
     return (
         <div
             ref={sectionRef}
@@ -215,6 +295,38 @@ export function SectionWrapper({
                     }}
                 />
             )}
+            
+            {/* Resize Handles - Visible when selected or hovered */}
+            {(isSelected || isHovered) && (
+                <>
+                    {/* Top Handle */}
+                    <div 
+                        className="absolute top-0 left-0 right-0 h-4 z-[101] cursor-ns-resize flex items-start justify-center group"
+                        onMouseDown={(e) => startResize(e, 'top')}
+                    >
+                        {/* Visual indicator */}
+                        <div className="w-24 h-5 -mt-2.5 bg-blue-500 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white cursor-ns-resize">
+                            <div className="w-10 h-1 border-t-2 border-b-2 border-white/50" />
+                        </div>
+                        {/* Hover hint line */}
+                        <div className="absolute top-0 w-full border-t-2 border-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
+                    {/* Bottom Handle */}
+                    <div 
+                        className="absolute bottom-0 left-0 right-0 h-4 z-[101] cursor-ns-resize flex items-end justify-center group"
+                        onMouseDown={(e) => startResize(e, 'bottom')}
+                    >
+                        {/* Visual indicator */}
+                        <div className="w-24 h-5 -mb-2.5 bg-blue-500 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white cursor-ns-resize">
+                             <div className="w-10 h-1 border-t-2 border-b-2 border-white/50" />
+                        </div>
+                        {/* Hover hint line */}
+                        <div className="absolute bottom-0 w-full border-b-2 border-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                </>
+            )}
+
             {/* Section Controls - ALWAYS visible in edit mode */}
             <div
                 className="absolute top-2 left-2 md:top-4 md:left-4 z-[100] flex items-center gap-0.5 md:gap-1 bg-slate-900 shadow-lg rounded-lg p-1 md:p-1.5"

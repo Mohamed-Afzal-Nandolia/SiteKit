@@ -57,6 +57,10 @@ export interface ExtendedSectionConfig {
     sectionBackground?: string;
     sectionBackgroundImage?: string;
     sectionBackgroundOpacity?: number;
+
+    // Section Layout
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 // Generate unique ID
