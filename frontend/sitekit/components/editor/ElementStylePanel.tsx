@@ -16,7 +16,7 @@ interface ElementStylePanelProps {
 
 export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchorRect }: ElementStylePanelProps) {
     const { pages, siteDomain } = useEditor();
-    const [activeTab, setActiveTab] = useState<"format" | "colors" | "button">("format");
+    const [activeTab, setActiveTab] = useState<"format" | "colors" | "settings">("format");
     const [showTextColorPicker, setShowTextColorPicker] = useState(false);
     const [showBgColorPicker, setShowBgColorPicker] = useState(false);
     const [showBorderColorPicker, setShowBorderColorPicker] = useState(false);
@@ -182,16 +182,14 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                     >
                         Colors
                     </button>
-                    {element.type === "button" && (
-                        <button
-                            onClick={() => setActiveTab("button")}
-                            className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
-                                activeTab === "button" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
-                            }`}
-                        >
-                            Button
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setActiveTab("settings")}
+                        className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                            activeTab === "settings" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                        }`}
+                    >
+                        {element.type === "button" ? "Button" : "Link"}
+                    </button>
                 </div>
 
                 {/* Tab Content */}
@@ -598,8 +596,8 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                         </div>
                     )}
 
-                    {/* Button Tab */}
-                    {activeTab === "button" && element.type === "button" && (
+                    {/* Button/Link Settings Tab */}
+                    {activeTab === "settings" && (
                         <div className="space-y-4">
                             {/* Link URL */}
                             {/* Link URL */}
@@ -687,50 +685,54 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                                 )}
                             </div>
 
-                            {/* Padding */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs text-slate-400 mb-1">
-                                        Padding X: {element.paddingX || 0}px
-                                    </label>
-                                    <input
-                                        type="range"
-                                        min="4"
-                                        max="64"
-                                        value={element.paddingX || 24}
-                                        onChange={(e) => onUpdate({ paddingX: parseInt(e.target.value) })}
-                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                                    />
+                            {/* Padding - Only for Buttons (Text uses format tab padding or fixed) */}
+                            {element.type === "button" && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">
+                                            Padding X: {element.paddingX || 0}px
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="4"
+                                            max="64"
+                                            value={element.paddingX || 24}
+                                            onChange={(e) => onUpdate({ paddingX: parseInt(e.target.value) })}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">
+                                            Padding Y: {element.paddingY || 0}px
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="4"
+                                            max="32"
+                                            value={element.paddingY || 12}
+                                            onChange={(e) => onUpdate({ paddingY: parseInt(e.target.value) })}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs text-slate-400 mb-1">
-                                        Padding Y: {element.paddingY || 0}px
-                                    </label>
-                                    <input
-                                        type="range"
-                                        min="4"
-                                        max="32"
-                                        value={element.paddingY || 12}
-                                        onChange={(e) => onUpdate({ paddingY: parseInt(e.target.value) })}
-                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                                    />
-                                </div>
-                            </div>
+                            )}
 
-                            {/* Border Radius */}
-                            <div>
-                                <label className="block text-xs text-slate-400 mb-1">
-                                    Corner Radius: {element.borderRadius ?? 8}px
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="50"
-                                    value={element.borderRadius ?? 8}
-                                    onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
-                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                                />
-                            </div>
+                            {/* Border Radius - Only for Buttons (Text uses border tab or fixed) */}
+                            {element.type === "button" && (
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">
+                                        Corner Radius: {element.borderRadius ?? 8}px
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="50"
+                                        value={element.borderRadius ?? 8}
+                                        onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
+                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                    />
+                                </div>
+                            )}
 
                             {/* Open in New Tab */}
                             <div className="mt-4">

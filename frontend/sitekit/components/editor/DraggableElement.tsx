@@ -233,8 +233,8 @@ export function DraggableElement({
     // Handle element click
     const handleClick = (e: React.MouseEvent) => {
         if (!isEditMode) {
-            // In view mode, buttons should navigate
-            if (element.type === "button" && element.href) {
+            // In view mode, buttons and text with links should navigate
+            if ((element.type === "button" || element.type === "text") && element.href) {
                 // Check if it's a data URL (file attachment)
                 if (element.href.startsWith("data:") && element.fileType) {
                     try {
