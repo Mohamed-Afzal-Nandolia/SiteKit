@@ -133,6 +133,27 @@ export function DraggableElement({
         }
     }, [responsiveElement.content, isEditing]);
 
+    // Fix: Restore content when entering edit mode (since dangerouslySetInnerHTML is removed)
+    useEffect(() => {
+        if (isEditing && contentRef.current) {
+            // We use innerText to match the input handler's behavior
+            contentRef.current.innerText = responsiveElement.content || "";
+            
+            // Focus and place cursor at end
+            contentRef.current.focus();
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(contentRef.current);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel?.removeAllRanges();
+                sel?.addRange(range);
+            } catch (e) {
+                // Ignore selection errors
+            }
+        }
+    }, [isEditing]);
+
     // Handle content editing
     const handleContentBlur = () => {
         setIsEditing(false);
