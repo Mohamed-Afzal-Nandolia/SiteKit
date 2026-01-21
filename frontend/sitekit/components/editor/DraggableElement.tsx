@@ -363,10 +363,10 @@ export function DraggableElement({
         }),
         // Text-specific styles
         ...(responsiveElement.type === "text" && {
-            padding: "8px 16px",
-            minWidth: "100px",
-            // Use max-content to prevent premature wrapping when dragging
-            width: "max-content",
+            padding: "4px 8px", // Reduced padding
+            minWidth: "auto",   // Remove fixed minimum width to fit short text
+            // Use fit-content to wrap nicely but allow growth
+            width: "fit-content",
             maxWidth: "100%", 
             borderRadius: `${responsiveElement.borderRadius !== undefined ? responsiveElement.borderRadius : 4}px`,
             borderWidth: `${responsiveElement.borderWidth || 0}px`,
