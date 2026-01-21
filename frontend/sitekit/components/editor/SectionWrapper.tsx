@@ -303,10 +303,10 @@ export function SectionWrapper({
         <div
             ref={sectionRef}
             className={`relative transition-all ${isSelected
-                ? "ring-2 ring-blue-500 ring-offset-2"
+                ? "ring-2 ring-blue-500 ring-offset-2 z-20"
                 : isHovered
-                    ? "ring-2 ring-blue-300/50 ring-offset-1"
-                    : ""
+                    ? "ring-2 ring-blue-300/50 ring-offset-1 z-20"
+                    : "z-0"
                 }`}
             onClick={handleClick}
             onMouseEnter={() => setIsHovered(true)}

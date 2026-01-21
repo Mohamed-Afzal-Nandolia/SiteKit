@@ -78,7 +78,7 @@ export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
 
     return (
         <section 
-            className="relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-all duration-300 ease-in-out min-h-[600px]"
+            className="relative overflow-hidden transition-all duration-300 ease-in-out min-h-[600px]"
             style={{ 
                 paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
                 paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
