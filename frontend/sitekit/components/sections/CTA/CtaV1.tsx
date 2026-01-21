@@ -27,8 +27,10 @@ export function CtaV1({ config, onConfigChange, domain }: CtaV1Props) {
     
     return (
         <section 
-            className="relative overflow-hidden transition-all duration-300 ease-in-out bg-blue-600 dark:bg-blue-700 min-h-[300px]"
+            className="relative overflow-hidden transition-all duration-300 ease-in-out bg-blue-600 dark:bg-blue-700"
             style={{ 
+                // Reduce min-height when padding is customized to allow smaller sections
+                minHeight: (config?.paddingTop === undefined && config?.paddingBottom === undefined) ? '300px' : '100px',
                 paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
                 paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
                 // Fallback: apply defaults if specific side is undefined
