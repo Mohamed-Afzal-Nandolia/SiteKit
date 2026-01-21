@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { createDefaultTextElement, createDefaultButtonElement, createDefaultImageElement, COLOR_PRESETS } from "./elementTypes";
 import type { SectionElement } from "./elementTypes";
 import { AssetManager } from "./AssetManager";
@@ -30,6 +31,37 @@ export function SectionToolbar({
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAssetManager, setShowAssetManager] = useState(false);
+    
+    // Ref for the toggle button to calculate position
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+    // Calculate position when opening
+    React.useLayoutEffect(() => {
+        if (isExpanded && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            // Position: below the button (rect.bottom), aligned to right (rect.right)
+            // Note: Menu width is ~220px, so we subtract that from rect.right to align right edge
+            setMenuPosition({
+                top: rect.bottom + window.scrollY + 8, // 8px gap
+                left: rect.right + window.scrollX - 220 
+            });
+        }
+    }, [isExpanded]);
+
+    // Close on click outside
+    React.useEffect(() => {
+        if (!isExpanded) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (buttonRef.current && buttonRef.current.contains(e.target as Node)) return;
+            // Check if click is inside the portal menu (we'll attach a ref or class)
+            if ((e.target as Element).closest('[data-portal-menu]')) return;
+            setIsExpanded(false);
+        };
+        window.addEventListener('mousedown', handleClickOutside);
+        return () => window.removeEventListener('mousedown', handleClickOutside);
+    }, [isExpanded]);
+
 
     const handleAddText = () => {
         const textElement = createDefaultTextElement(50, 50);
@@ -75,6 +107,7 @@ export function SectionToolbar({
                 <div className="absolute top-2 right-2 z-[100]">
                     {/* Main Toggle Button */}
                     <button
+                        ref={buttonRef}
                         onClick={() => setIsExpanded(!isExpanded)}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition-all ${isExpanded
                             ? "bg-blue-600 text-white"
@@ -85,12 +118,19 @@ export function SectionToolbar({
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
-                        {/* <span className="hidden sm:inline">Edit Section</span> */}
                     </button>
 
-                    {/* Expanded Menu */}
-                    {isExpanded && (
-                        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[220px]">
+                    {/* Expanded Menu - Rendered in Portal */}
+                    {isExpanded && createPortal(
+                        <div 
+                            data-portal-menu="true"
+                            className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[220px]"
+                            style={{
+                                top: menuPosition.top,
+                                left: menuPosition.left,
+                                width: '220px'
+                            }}
+                        >
                             {/* Add Text */}
                             <button
                                 onClick={handleAddText}
@@ -146,8 +186,6 @@ export function SectionToolbar({
                                     </div>
                                 </button>
                             )}
-
-
 
                             {/* Background Image */}
                             <button
@@ -227,7 +265,8 @@ export function SectionToolbar({
                                     )}
                                 </div>
                             )}
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
             )}
