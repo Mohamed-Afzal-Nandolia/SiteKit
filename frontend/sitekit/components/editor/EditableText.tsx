@@ -48,20 +48,18 @@ export function EditableText({
     // Track if we've initialized the content
     const isInitialized = useRef(false);
 
-    // Set initial content only once when entering edit mode or on mount
+    const [localValue, setLocalValue] = useState(value || placeholder);
+
     useEffect(() => {
-        if (elementRef.current && !isInitialized.current) {
-            elementRef.current.innerText = value || placeholder;
-            isInitialized.current = true;
-        }
+        setLocalValue(value || placeholder);
     }, [value, placeholder]);
 
-    // Update content when value changes from parent (but not during editing)
+    // Update content when localValue changes
     useEffect(() => {
         if (elementRef.current && !isEditing) {
-            elementRef.current.innerText = value || placeholder;
+            elementRef.current.innerText = localValue;
         }
-    }, [value, placeholder, isEditing]);
+    }, [localValue, isEditing]);
 
     // Handle entering edit mode
     const handleClick = (e: React.MouseEvent) => {
@@ -175,6 +173,7 @@ export function EditableText({
         setIsEditing(false);
         if (elementRef.current) {
             const newText = elementRef.current.innerText;
+            setLocalValue(newText); // Keep local state in sync
             if (newText !== value) {
                 onUpdate(newText);
             }
@@ -293,6 +292,7 @@ export function EditableText({
             // Cancel editing, restore original value
             if (elementRef.current) {
                 elementRef.current.innerText = value;
+                setLocalValue(value);
             }
             setIsEditing(false);
             elementRef.current?.blur();
@@ -335,7 +335,7 @@ export function EditableText({
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 style={{ ...styles, minWidth: "20px", display: "inline-block" }}
-                dangerouslySetInnerHTML={{ __html: value || placeholder }}
+                dangerouslySetInnerHTML={{ __html: localValue }}
             />
             {isSelected && !isEditing && onStyleUpdate && (
                 <ElementStylePanel 
