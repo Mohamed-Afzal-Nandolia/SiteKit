@@ -32,7 +32,7 @@ export interface SectionElement {
     textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
 
     // Mobile Overrides
-    mobile?: Partial<SectionElement>;
+    mobile?: Partial<SectionElement> & { hidden?: boolean };
 
     // Button-specific
     borderRadius?: number;
