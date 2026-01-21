@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useEditor } from "./EditorContext";
 import type { DecorativeShape } from "./shapeTypes";
 
@@ -281,6 +282,12 @@ interface ShapePropertiesPanelProps {
 
 function ShapePropertiesPanel({ shape, onUpdate, onDelete, onClose }: ShapePropertiesPanelProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
     const handleDelete = () => {
         if (showDeleteConfirm) {
@@ -292,10 +299,12 @@ function ShapePropertiesPanel({ shape, onUpdate, onDelete, onClose }: ShapePrope
         }
     };
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <div
             data-shape-panel="true"
-            className="fixed top-20 right-4 w-80 bg-slate-800 text-white rounded-2xl shadow-2xl border border-slate-700 z-[9999] max-h-[80vh] overflow-y-auto"
+            className="fixed top-20 right-4 w-80 bg-slate-800 text-white rounded-2xl shadow-2xl border border-slate-700 z-[99999] max-h-[80vh] overflow-y-auto"
         >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 sticky top-0 bg-slate-800">
@@ -467,6 +476,7 @@ function ShapePropertiesPanel({ shape, onUpdate, onDelete, onClose }: ShapePrope
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

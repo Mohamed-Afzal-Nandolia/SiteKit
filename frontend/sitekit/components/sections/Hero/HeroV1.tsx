@@ -97,7 +97,7 @@ export function HeroV1({ config, onConfigChange, domain }: HeroV1Props) {
                      But if users want to drag shapes, we need pointer events on shapes.
                  */}
                 
-                <div className="pointer-events-auto">
+                <div className="absolute inset-0 pointer-events-auto">
                     {/* Decorative Shapes */}
                     {decorativeShapes.map((shape) => (
                         <EditableShape

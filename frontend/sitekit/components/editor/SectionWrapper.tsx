@@ -356,10 +356,12 @@ export function SectionWrapper({
                 </>
             )}
 
-            {/* Section Controls - ALWAYS visible in edit mode */}
+            {/* Section Controls - Visible on hover or when selected */}
             <div
-                className="absolute top-2 left-2 md:top-4 md:left-4 z-[100] flex items-center gap-0.5 md:gap-1 bg-slate-900 shadow-lg rounded-lg p-1 md:p-1.5"
-                style={{ pointerEvents: 'auto' }}
+                className={`absolute top-2 left-2 md:top-4 md:left-4 z-[100] flex items-center gap-0.5 md:gap-1 bg-slate-900 shadow-lg rounded-lg p-1 md:p-1.5 transition-opacity duration-200 ${
+                    isHovered || isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+                style={{ pointerEvents: isHovered || isSelected ? 'auto' : 'none' }}
             >
                 {/* Section Type Label - hidden on mobile */}
                 <span className="hidden md:inline-block px-2 py-1 text-xs font-medium text-white bg-slate-700 rounded">
