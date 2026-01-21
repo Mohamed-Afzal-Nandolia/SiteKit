@@ -1,5 +1,6 @@
 package com.sitekit.utilityModule.scheduler;
 
+import com.sitekit.utilityModule.constants.APIEndpoints;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,13 +19,13 @@ public class CronJob {
 
     @Scheduled(cron = "0 * * * * ?")
     public void pingCheckAlive() {
-        String url = backendUrl + "/auth/ping";
+        String url = backendUrl + APIEndpoints.AUTH + APIEndpoints.PING;
         try {
             String response = restTemplate.getForObject(url, String.class);
             log.info("URL to pinged -> {}", url);
-            log.info("Pinged /auth/check-alive -> Response: {}", response);
+            log.info("Pinged /auth/ping -> Response: {}", response);
         } catch (Exception e) {
-            log.error("Error while pinging /auth/check-alive: {}", e.getMessage(), e);
+            log.error("Error while pinging /auth/ping: {}", e.getMessage(), e);
         }
     }
 
