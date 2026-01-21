@@ -210,9 +210,9 @@ function EditorContent({
             <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[99]">
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={() => router.push("/dashboard")}
+                        onClick={() => router.push("/my-websites")}
                         className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="Back to Dashboard"
+                        title="Back to My Websites"
                     >
                         <ArrowLeft className="w-5 h-5 text-slate-500" />
                     </button>
