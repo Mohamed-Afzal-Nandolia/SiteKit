@@ -3,7 +3,7 @@
 
 export interface SectionElement {
     id: string;
-    type: "text" | "button";
+    type: "text" | "button" | "image";
 
     // Position (percentage-based for responsiveness)
     x: number;  // 0-100 (% from left)
@@ -13,19 +13,26 @@ export interface SectionElement {
     content: string;
     href?: string;  // For buttons
     newTab?: boolean;
+    fileName?: string; // For attached files
+    fileType?: string; // MIME type
 
-    // Typography
-    fontSize: number;
-    fontFamily: string;
-    fontWeight: string;
-    fontStyle: "normal" | "italic";
-    textDecoration: "none" | "underline" | "line-through";
-    textColor: string;
-    backgroundColor: string;
-    textAlign: "left" | "center" | "right";
-    lineHeight: number;
-    letterSpacing: number;
-    textTransform: "none" | "uppercase" | "lowercase" | "capitalize";
+
+    // Style properties
+    maxWidth?: string | number;
+    fontSize?: number;
+    fontFamily?: string;
+    fontWeight?: string;
+    fontStyle?: "normal" | "italic";
+    textDecoration?: "none" | "underline" | "line-through";
+    textColor?: string;
+    backgroundColor?: string;
+    textAlign?: "left" | "center" | "right";
+    lineHeight?: number;
+    letterSpacing?: number;
+    textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+
+    // Mobile Overrides
+    mobile?: Partial<SectionElement> & { hidden?: boolean };
 
     // Button-specific
     borderRadius?: number;
@@ -37,6 +44,12 @@ export interface SectionElement {
     // Text Stroke/Outline (for text elements)
     textStrokeColor?: string;
     textStrokeWidth?: number;
+
+    // Image-specific
+    src?: string;
+    width?: number;  // percentage width (0-100)
+    height?: number; // percentage height (0-100) or "auto"
+    objectFit?: "contain" | "cover" | "fill";
 }
 
 // Extended section config with elements
@@ -49,7 +62,12 @@ export interface ExtendedSectionConfig {
 
     // Section-level background customization
     sectionBackground?: string;
+    sectionBackgroundImage?: string;
     sectionBackgroundOpacity?: number;
+
+    // Section Layout
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 // Generate unique ID
@@ -105,6 +123,32 @@ export function createDefaultButtonElement(x = 50, y = 50): SectionElement {
         paddingY: 12,
         borderWidth: 0,
         borderColor: "transparent",
+    };
+}
+
+// Default image element
+export function createDefaultImageElement(x = 50, y = 50, src = ""): SectionElement {
+    return {
+        id: generateElementId(),
+        type: "image",
+        x,
+        y,
+        content: "", // Not used for images
+        src,
+        width: 30, // 30% of section width
+        height: 40, // 40% of section height
+        objectFit: "contain",
+        fontSize: 16,
+        fontFamily: "Inter, sans-serif",
+        fontWeight: "400",
+        fontStyle: "normal",
+        textDecoration: "none",
+        textColor: "#FFFFFF",
+        backgroundColor: "transparent",
+        textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
+        textTransform: "none",
     };
 }
 

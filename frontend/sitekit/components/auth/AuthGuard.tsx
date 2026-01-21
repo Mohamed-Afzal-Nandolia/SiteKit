@@ -32,13 +32,9 @@ export function AuthGuard({
 
             // If not authenticated but requireAuth, try to refresh the token first
             if (!authenticated && requireAuth) {
-                console.log("[AuthGuard] Token expired, attempting refresh...");
                 const refreshed = await refreshAccessToken();
                 if (refreshed) {
-                    console.log("[AuthGuard] Token refreshed successfully!");
                     authenticated = true;
-                } else {
-                    console.log("[AuthGuard] Token refresh failed, redirecting to login");
                 }
             }
 

@@ -4,7 +4,8 @@ import React, { useState, useRef } from "react";
 import { useEditor } from "./EditorContext";
 import { SectionToolbar } from "./SectionToolbar";
 import { ElementOverlay } from "./DraggableElement";
-import type { PageSectionDTO } from "@/api";
+import { AssetManager } from "./AssetManager";
+import type { PageSectionDTO, AssetDTO } from "@/api";
 import type { SectionElement, ExtendedSectionConfig } from "./elementTypes";
 
 interface SectionWrapperProps {
@@ -29,52 +30,74 @@ export function SectionWrapper({
     const { isEditMode, selectedSectionId, selectSection, updateSectionConfig, getSectionConfig } = useEditor();
     const [isHovered, setIsHovered] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showBackgroundImagePicker, setShowBackgroundImagePicker] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
+
+    // Use ref to hold the setter to avoid stale closures
+    const setShowBackgroundImagePickerRef = useRef(setShowBackgroundImagePicker);
+    setShowBackgroundImagePickerRef.current = setShowBackgroundImagePicker;
+
+
 
     // Get current config with elements
     const sectionId = section.id;
-    const currentConfig = sectionId ? (getSectionConfig(sectionId) as ExtendedSectionConfig) || {} : {};
+    // Get pending config from context, OR fallback to existing section config
+    const pendingConfig = sectionId ? getSectionConfig(sectionId) : undefined;
+    
+    // Parse the initial config from props
+    let initialConfig: ExtendedSectionConfig = {};
+    try {
+        if (section.configJson) {
+            initialConfig = JSON.parse(section.configJson);
+        } else if (typeof section.config === "string") {
+             initialConfig = JSON.parse(section.config);
+        } else {
+             initialConfig = (section.config as ExtendedSectionConfig) || {};
+        }
+    } catch (e) {
+        console.error("Failed to parse section config", e);
+    }
+
+    // Merge: pending config takes precedence
+    const currentConfig: ExtendedSectionConfig = {
+        ...initialConfig,
+        ...(pendingConfig || {})
+    };
     const elements = currentConfig.elements || [];
     const sectionBackground = currentConfig.sectionBackground;
-    
-    // Keep refs for handlers to avoid stale closures
-    const currentConfigRef = useRef(currentConfig);
-    const elementsRef = useRef(elements);
-    
-    // Update refs on render
-    currentConfigRef.current = currentConfig;
-    elementsRef.current = elements;
-    
-    // Debug: log elements on render
-    // console.log("Section", sectionId, "config:", currentConfig, "elements:", elements);
+    const sectionBackgroundImage = currentConfig.sectionBackgroundImage;
+
+
 
     // Add a new element
     const handleAddElement = (element: SectionElement) => {
         if (!sectionId) return;
-        
-        const currentElements = elementsRef.current;
-        const config = currentConfigRef.current;
-        
-        const updatedElements = [...currentElements, element];
+
+
+
+        const updatedElements = [...elements, element];
         updateSectionConfig(sectionId, {
-            ...config,
+            ...currentConfig,
             elements: updatedElements,
         });
+
+
     };
 
     // Update an element
     const handleUpdateElement = (elementId: string, updates: Partial<SectionElement>) => {
         if (!sectionId) return;
-        
-        const currentElements = elementsRef.current;
-        const config = currentConfigRef.current;
-        
-        const updatedElements = currentElements.map((el) =>
+
+
+
+        const updatedElements = elements.map((el) =>
             el.id === elementId ? { ...el, ...updates } : el
         );
-        
+
+
+
         updateSectionConfig(sectionId, {
-            ...config,
+            ...currentConfig,
             elements: updatedElements,
         });
     };
@@ -82,13 +105,10 @@ export function SectionWrapper({
     // Delete an element
     const handleDeleteElement = (elementId: string) => {
         if (!sectionId) return;
-        
-        const currentElements = elementsRef.current;
-        const config = currentConfigRef.current;
-        
-        const updatedElements = currentElements.filter((el) => el.id !== elementId);
+
+        const updatedElements = elements.filter((el) => el.id !== elementId);
         updateSectionConfig(sectionId, {
-            ...config,
+            ...currentConfig,
             elements: updatedElements,
         });
     };
@@ -96,22 +116,73 @@ export function SectionWrapper({
     // Change section background
     const handleBackgroundChange = (color: string) => {
         if (!sectionId) return;
-        
-        const config = currentConfigRef.current;
-        
+
+        if (color === "remove-image") {
+            updateSectionConfig(sectionId, {
+                ...currentConfig,
+                sectionBackgroundImage: "", // Clear image
+            });
+            return;
+        }
+
         updateSectionConfig(sectionId, {
-            ...config,
+            ...currentConfig,
             sectionBackground: color,
         });
+    };
+
+    // Open background image picker - use ref to avoid stale closure issues
+    const openBackgroundImagePicker = React.useCallback(() => {
+
+        setShowBackgroundImagePickerRef.current(true);
+    }, []);
+
+    // Handle background image selection from AssetManager
+    const handleBackgroundImageSelect = (asset: AssetDTO) => {
+        if (!sectionId) return;
+
+        let imageUrl = "";
+        if (asset.fileData && asset.mimeType) {
+            imageUrl = `data:${asset.mimeType};base64,${asset.fileData}`;
+        } else if (asset.url) {
+            imageUrl = asset.url;
+        }
+
+        if (imageUrl) {
+            const freshConfig = getSectionConfig(sectionId) as ExtendedSectionConfig || {};
+            updateSectionConfig(sectionId, {
+                ...freshConfig,
+                sectionBackgroundImage: imageUrl,
+            });
+        }
+        setShowBackgroundImagePicker(false);
+    };
+
+    // Build background styles for view mode
+    const getBackgroundStyles = (): React.CSSProperties => {
+        const styles: React.CSSProperties = {};
+
+        if (sectionBackgroundImage) {
+            styles.backgroundImage = `url(${sectionBackgroundImage})`;
+            styles.backgroundSize = 'cover';
+            styles.backgroundPosition = 'center';
+            styles.backgroundRepeat = 'no-repeat';
+
+        }
+        if (sectionBackground && sectionBackground !== "transparent") {
+            // If both color and image, color acts as a fallback
+            styles.backgroundColor = sectionBackground;
+        }
+        return styles;
     };
 
     if (!isEditMode) {
         // In view mode, render with elements overlay but no editing controls
         return (
-            <div 
-                ref={sectionRef} 
+            <div
+                ref={sectionRef}
                 className="relative"
-                style={sectionBackground && sectionBackground !== "transparent" ? { backgroundColor: sectionBackground } : {}}
+                style={getBackgroundStyles()}
             >
                 {children}
                 {elements.length > 0 && (
@@ -119,8 +190,8 @@ export function SectionWrapper({
                         elements={elements}
                         sectionRef={sectionRef}
                         isEditMode={false}
-                        onUpdateElement={() => {}}
-                        onDeleteElement={() => {}}
+                        onUpdateElement={() => { }}
+                        onDeleteElement={() => { }}
                     />
                 )}
             </div>
@@ -148,23 +219,145 @@ export function SectionWrapper({
         }
     };
 
+    // Drag-to-resize state
+    const [dragState, setDragState] = useState<{
+        isDragging: boolean;
+        handle: 'top' | 'bottom' | null;
+        startY: number;
+        startPadding: number;
+    }>({
+        isDragging: false,
+        handle: null,
+        startY: 0,
+        startPadding: 0
+    });
+
+    // Handle global mouse move / up for resizing
+    React.useEffect(() => {
+        if (!dragState.isDragging || !dragState.handle || !sectionId) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const dy = e.clientY - dragState.startY;
+            // If dragging top handle: moving down (positive dy) should DECREASE padding
+            // If dragging bottom handle: moving down (positive dy) should INCREASE padding
+            const paddingChange = dragState.handle === 'top' ? -dy : dy;
+            
+            let newPadding = Math.max(0, dragState.startPadding + paddingChange);
+            
+            // Apply step of 5px for easier alignment
+            newPadding = Math.round(newPadding / 5) * 5;
+
+            const updates: Partial<ExtendedSectionConfig> = {};
+            if (dragState.handle === 'top') {
+                updates.paddingTop = newPadding;
+            } else {
+                updates.paddingBottom = newPadding;
+            }
+
+            updateSectionConfig(sectionId, {
+                ...currentConfig,
+                ...updates
+            });
+        };
+
+        const handleMouseUp = () => {
+            setDragState({
+                isDragging: false,
+                handle: null,
+                startY: 0,
+                startPadding: 0
+            });
+            document.body.style.cursor = 'default';
+            document.body.style.userSelect = 'auto'; // Re-enable selection
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [dragState, sectionId, currentConfig, updateSectionConfig]);
+
+    const startResize = (e: React.MouseEvent, handle: 'top' | 'bottom') => {
+        e.stopPropagation();
+        if (!sectionId) return;
+
+        const currentPadding = handle === 'top' 
+            ? (currentConfig.paddingTop ?? 80) // Default 80px (py-20)
+            : (currentConfig.paddingBottom ?? 80);
+
+        setDragState({
+            isDragging: true,
+            handle,
+            startY: e.clientY,
+            startPadding: currentPadding
+        });
+        
+        document.body.style.cursor = 'ns-resize';
+        document.body.style.userSelect = 'none'; // Disable selection
+    };
+
     return (
         <div
             ref={sectionRef}
-            className={`relative transition-all ${
-                isSelected 
-                    ? "ring-2 ring-blue-500 ring-offset-2" 
-                    : isHovered 
-                        ? "ring-2 ring-blue-300/50 ring-offset-1" 
-                        : ""
-            }`}
-            style={sectionBackground && sectionBackground !== "transparent" ? { backgroundColor: sectionBackground } : {}}
+            className={`relative transition-all ${isSelected
+                ? "ring-2 ring-blue-500 ring-offset-2 z-[9999]"
+                : isHovered
+                    ? "ring-2 ring-blue-300/50 ring-offset-1 z-[9999]"
+                    : "z-0"
+                }`}
             onClick={handleClick}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
+            {/* Section Background Image Overlay - sits above child backgrounds but below content */}
+            {sectionBackgroundImage && (
+                <div
+                    className="absolute inset-0 z-[1] pointer-events-none"
+                    style={{
+                        backgroundImage: `url(${sectionBackgroundImage})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                    }}
+                />
+            )}
+            
+            {/* Resize Handles - Visible when selected or hovered */}
+            {(isSelected || isHovered) && (
+                <>
+                    {/* Top Handle */}
+                    <div 
+                        className="absolute top-0 left-0 right-0 h-4 z-[101] cursor-ns-resize flex items-start justify-center group"
+                        onMouseDown={(e) => startResize(e, 'top')}
+                    >
+                        {/* Visual indicator */}
+                        <div className="w-24 h-5 -mt-2.5 bg-blue-500 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white cursor-ns-resize">
+                            <div className="w-10 h-1 border-t-2 border-b-2 border-white/50" />
+                        </div>
+                        {/* Hover hint line */}
+                        <div className="absolute top-0 w-full border-t-2 border-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
+                    {/* Bottom Handle */}
+                    <div 
+                        className="absolute bottom-0 left-0 right-0 h-4 z-[101] cursor-ns-resize flex items-end justify-center group"
+                        onMouseDown={(e) => startResize(e, 'bottom')}
+                    >
+                        {/* Visual indicator */}
+                        <div className="w-24 h-5 -mb-2.5 bg-blue-500 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white cursor-ns-resize">
+                             <div className="w-10 h-1 border-t-2 border-b-2 border-white/50" />
+                        </div>
+                        {/* Hover hint line */}
+                        <div className="absolute bottom-0 w-full border-b-2 border-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                </>
+            )}
+
             {/* Section Controls - ALWAYS visible in edit mode */}
-            <div 
+            <div
                 className="absolute top-2 left-2 md:top-4 md:left-4 z-[100] flex items-center gap-0.5 md:gap-1 bg-slate-900 shadow-lg rounded-lg p-1 md:p-1.5"
                 style={{ pointerEvents: 'auto' }}
             >
@@ -202,11 +395,10 @@ export function SectionWrapper({
                 {/* Delete - 2-Step Confirmation */}
                 <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                    className={`p-2 md:p-1.5 rounded transition-all touch-manipulation flex items-center gap-1 ${
-                        showDeleteConfirm 
-                            ? "bg-red-600 text-white shadow-lg ring-2 ring-red-400 ring-offset-2 ring-offset-slate-900 px-3 w-auto" 
-                            : "bg-red-500/20 hover:bg-red-500 active:bg-red-600 text-red-400 hover:text-white"
-                    }`}
+                    className={`p-2 md:p-1.5 rounded transition-all touch-manipulation flex items-center gap-1 ${showDeleteConfirm
+                        ? "bg-red-600 text-white shadow-lg ring-2 ring-red-400 ring-offset-2 ring-offset-slate-900 px-3 w-auto"
+                        : "bg-red-500/20 hover:bg-red-500 active:bg-red-600 text-red-400 hover:text-white"
+                        }`}
                     title={showDeleteConfirm ? "Click again to confirm" : "Delete Section"}
                 >
                     {showDeleteConfirm ? (
@@ -223,7 +415,9 @@ export function SectionWrapper({
             <SectionToolbar
                 onAddElement={handleAddElement}
                 onBackgroundChange={handleBackgroundChange}
+                onOpenBackgroundImagePicker={openBackgroundImagePicker}
                 currentBackground={sectionBackground}
+                currentBackgroundImage={sectionBackgroundImage}
                 isVisible={isEditMode && isHovered}
             />
 
@@ -237,7 +431,14 @@ export function SectionWrapper({
                 isEditMode={isEditMode}
                 onUpdateElement={handleUpdateElement}
                 onDeleteElement={handleDeleteElement}
-                isFirst={isFirst}
+            />
+
+            {/* Background Image Picker - rendered here to persist across hover states */}
+            <AssetManager
+                isOpen={showBackgroundImagePicker}
+                onClose={() => setShowBackgroundImagePicker(false)}
+                onSelect={handleBackgroundImageSelect}
+                filterType="IMAGE"
             />
         </div>
     );

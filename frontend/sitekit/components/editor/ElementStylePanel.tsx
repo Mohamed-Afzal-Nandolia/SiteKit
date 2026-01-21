@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useEditor } from "./EditorContext";
 import type { SectionElement } from "./elementTypes";
 import { COLOR_PRESETS, FONT_OPTIONS, FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "./elementTypes";
+import { AssetPicker } from "./AssetPicker";
+import type { AssetDTO } from "@/api";
 
 interface ElementStylePanelProps {
     element: SectionElement;
@@ -12,7 +15,8 @@ interface ElementStylePanelProps {
 }
 
 export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchorRect }: ElementStylePanelProps) {
-    const [activeTab, setActiveTab] = useState<"format" | "colors" | "button">("format");
+    const { pages, siteDomain } = useEditor();
+    const [activeTab, setActiveTab] = useState<"format" | "colors" | "settings">("format");
     const [showTextColorPicker, setShowTextColorPicker] = useState(false);
     const [showBgColorPicker, setShowBgColorPicker] = useState(false);
     const [showBorderColorPicker, setShowBorderColorPicker] = useState(false);
@@ -21,6 +25,18 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
     const [verticalPosition, setVerticalPosition] = useState<"top" | "bottom">("top");
     const [mounted, setMounted] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    
+    // Link type state (internal vs external)
+    const [linkType, setLinkType] = useState<"external" | "internal" | "file">("external");
+
+    // Initialize link type
+    useEffect(() => {
+        if (element.fileName) {
+            setLinkType("file");
+        } else if (element.href && siteDomain && element.href.includes(`/${siteDomain}/`)) {
+            setLinkType("internal");
+        }
+    }, [element.href, siteDomain, element.fileName]);
     
     const panelWidth = 320;
     const panelGap = 12;
@@ -117,7 +133,7 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 sticky top-0 bg-slate-800">
                     <span className="font-semibold text-sm">
-                        {element.type === "text" ? "Edit Text" : "Edit Button"}
+                        {element.type === "text" ? "Edit Text" : element.type === "image" ? "Edit Image" : "Edit Button"}
                     </span>
                     <div className="flex items-center gap-2">
                         <button
@@ -166,16 +182,14 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                     >
                         Colors
                     </button>
-                    {element.type === "button" && (
-                        <button
-                            onClick={() => setActiveTab("button")}
-                            className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
-                                activeTab === "button" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
-                            }`}
-                        >
-                            Button
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setActiveTab("settings")}
+                        className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                            activeTab === "settings" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                        }`}
+                    >
+                        {element.type === "button" ? "Button" : element.type === "image" ? "Image" : "Link"}
+                    </button>
                 </div>
 
                 {/* Tab Content */}
@@ -582,68 +596,253 @@ export function ElementStylePanel({ element, onUpdate, onDelete, onClose, anchor
                         </div>
                     )}
 
-                    {/* Button Tab */}
-                    {activeTab === "button" && element.type === "button" && (
+                    {/* Button/Link/Image Settings Tab */}
+                    {activeTab === "settings" && element.type !== "image" && (
                         <div className="space-y-4">
                             {/* Link URL */}
+                            {/* Link URL */}
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1">Link URL</label>
-                                <input
-                                    type="text"
-                                    value={element.href || ""}
-                                    onChange={(e) => onUpdate({ href: e.target.value })}
-                                    placeholder="https://..."
-                                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                <label className="block text-xs text-slate-400 mb-1">Link Destination</label>
+                                
+                                {/* Link Type Toggle */}
+                                <div className="flex bg-slate-700 p-1 rounded-lg mb-2">
+                                    <button
+                                        onClick={() => setLinkType("internal")}
+                                        className={`flex-1 py-1 text-xs rounded-md transition-colors ${
+                                            linkType === "internal" ? "bg-slate-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                                        }`}
+                                    >
+                                        Page
+                                    </button>
+                                    <button
+                                        onClick={() => setLinkType("external")}
+                                        className={`flex-1 py-1 text-xs rounded-md transition-colors ${
+                                            linkType === "external" ? "bg-slate-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                                        }`}
+                                    >
+                                        Custom URL
+                                    </button>
+                                    <button
+                                        onClick={() => setLinkType("file")}
+                                        className={`flex-1 py-1 text-xs rounded-md transition-colors ${
+                                            linkType === "file" ? "bg-slate-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                                        }`}
+                                    >
+                                        File
+                                    </button>
+                                </div>
+
+                                {linkType === "file" ? (
+                                    <div className="space-y-2">
+                                        <AssetPicker
+                                            value={element.fileName || element.href}
+                                            onChange={(url, asset) => {
+                                                const updates: Partial<SectionElement> = { 
+                                                    href: url,
+                                                    newTab: true // Always open files in new tab
+                                                };
+                                                if (asset) {
+                                                    updates.fileName = asset.name;
+                                                    updates.fileType = asset.mimeType;
+                                                }
+                                                onUpdate(updates);
+                                            }}
+                                            placeholder="Select a file..."
+                                            label="Attach File"
+                                        />
+                                        {element.fileName && (
+                                            <p className="text-[10px] text-slate-400">
+                                                Attached: {element.fileName}
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : linkType === "internal" ? (
+                                    <select
+                                        value={element.href?.split('/').pop() || ""} // Try to extract slug
+                                        onChange={(e) => {
+                                            const slug = e.target.value;
+                                            if (slug && siteDomain) {
+                                                onUpdate({ href: `/${siteDomain}/${slug}` });
+                                            }
+                                        }}
+                                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">Select a page...</option>
+                                        {pages.map(page => (
+                                            <option key={page.id} value={page.slug}>
+                                                {page.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={element.href || ""}
+                                        onChange={(e) => onUpdate({ href: e.target.value })}
+                                        placeholder="https://..."
+                                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                    />
+                                )}
+                            </div>
+
+                            {/* Padding - Only for Buttons (Text uses format tab padding or fixed) */}
+                            {element.type === "button" && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">
+                                            Padding X: {element.paddingX || 0}px
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="4"
+                                            max="64"
+                                            value={element.paddingX || 24}
+                                            onChange={(e) => onUpdate({ paddingX: parseInt(e.target.value) })}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">
+                                            Padding Y: {element.paddingY || 0}px
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="4"
+                                            max="32"
+                                            value={element.paddingY || 12}
+                                            onChange={(e) => onUpdate({ paddingY: parseInt(e.target.value) })}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Border Radius - Only for Buttons (Text uses border tab or fixed) */}
+                            {element.type === "button" && (
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">
+                                        Corner Radius: {element.borderRadius ?? 8}px
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="50"
+                                        value={element.borderRadius ?? 8}
+                                        onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
+                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Open in New Tab */}
+                            <div className="mt-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={element.newTab || false}
+                                        onChange={(e) => onUpdate({ newTab: e.target.checked })}
+                                        className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-800"
+                                    />
+                                    <span className="text-sm text-slate-300">Open in new tab</span>
+                                </label>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Image Settings Tab Override (if type is image) */}
+                    {activeTab === "settings" && element.type === "image" && (
+                        <div className="space-y-4">
+                            {/* Change Image */}
+                            <div className="bg-slate-700/50 p-3 rounded-lg border border-slate-700">
+                                <label className="block text-xs text-slate-400 mb-2 font-medium">Image Source</label>
+                                <AssetPicker
+                                    value={element.src || ""}
+                                    onChange={(url, asset) => {
+                                        // If file data, create data URL
+                                        if (asset?.fileData && asset.mimeType) {
+                                            const dataUrl = `data:${asset.mimeType};base64,${asset.fileData}`;
+                                            onUpdate({ src: dataUrl });
+                                        } else {
+                                            onUpdate({ src: url });
+                                        }
+                                    }}
+                                    filterType="IMAGE"
+                                    placeholder="Select an image..."
+                                    label=""
                                 />
                             </div>
 
-                            {/* Padding */}
+                            {/* Dimensions */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs text-slate-400 mb-1">
-                                        Padding X: {element.paddingX || 0}px
-                                    </label>
+                                    <label className="block text-xs text-slate-400 mb-1">Width (%)</label>
                                     <input
                                         type="range"
-                                        min="4"
-                                        max="64"
-                                        value={element.paddingX || 24}
-                                        onChange={(e) => onUpdate({ paddingX: parseInt(e.target.value) })}
+                                        min="10"
+                                        max="100"
+                                        value={typeof element.width === 'number' ? element.width : 100}
+                                        onChange={(e) => onUpdate({ width: parseInt(e.target.value) })}
                                         className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-slate-400 mb-1">
-                                        Padding Y: {element.paddingY || 0}px
-                                    </label>
+                                    <label className="block text-xs text-slate-400 mb-1">Height (%)</label>
                                     <input
                                         type="range"
-                                        min="4"
-                                        max="32"
-                                        value={element.paddingY || 12}
-                                        onChange={(e) => onUpdate({ paddingY: parseInt(e.target.value) })}
+                                        min="10"
+                                        max="100"
+                                        value={typeof element.height === 'number' ? element.height : 100}
+                                        onChange={(e) => onUpdate({ height: parseInt(e.target.value) })}
                                         className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                     />
                                 </div>
                             </div>
 
+                            {/* Object Fit */}
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-2">Fill Mode (Fit)</label>
+                                <div className="flex bg-slate-700 p-1 rounded-lg">
+                                    {(["contain", "cover", "fill"] as const).map((fit) => (
+                                        <button
+                                            key={fit}
+                                            onClick={() => onUpdate({ objectFit: fit })}
+                                            className={`flex-1 py-1 text-xs rounded-md transition-colors ${
+                                                (element.objectFit || "contain") === fit 
+                                                    ? "bg-slate-600 text-white shadow" 
+                                                    : "text-slate-400 hover:text-slate-200"
+                                            }`}
+                                        >
+                                            {fit.charAt(0).toUpperCase() + fit.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
                             {/* Border Radius */}
                             <div>
                                 <label className="block text-xs text-slate-400 mb-1">
-                                    Corner Radius: {element.borderRadius ?? 8}px
+                                    Corner Radius: {element.borderRadius || 0}px
                                 </label>
                                 <input
                                     type="range"
                                     min="0"
                                     max="50"
-                                    value={element.borderRadius ?? 8}
+                                    value={element.borderRadius || 0}
                                     onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
                                     className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                 />
                             </div>
 
-                            {/* Open in New Tab */}
-                            <div className="mt-4">
+                            {/* Link on Image */}
+                            <div className="pt-4 border-t border-slate-700">
+                                <label className="block text-xs text-slate-400 mb-2">Link Destination (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={element.href || ""}
+                                    onChange={(e) => onUpdate({ href: e.target.value })}
+                                    placeholder="https://..."
+                                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 mb-2"
+                                />
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"

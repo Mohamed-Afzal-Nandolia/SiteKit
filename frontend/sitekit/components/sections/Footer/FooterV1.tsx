@@ -24,17 +24,34 @@ export interface FooterV1Config {
     columnLinkStyles?: React.CSSProperties[][];
     copyrightText?: string;
     copyrightStyles?: React.CSSProperties;
+    sectionBackgroundImage?: string;
     sectionBackground?: string;
     sectionBackgroundOpacity?: number;
+    paddingTop?: number;
+    paddingBottom?: number;
 }
 
 interface FooterV1Props {
     config: FooterV1Config;
     onConfigChange?: (newConfig: FooterV1Config) => void;
+    domain?: string;
 }
 
-export function FooterV1({ config, onConfigChange }: FooterV1Props) {
+export function FooterV1({ config, onConfigChange, domain }: FooterV1Props) {
     const { isEditMode } = useEditor();
+
+    // Helper to transform internal links for public site view
+    const getSiteLink = (href: string) => {
+        if (!domain || !href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
+            return href;
+        }
+        // Avoid double prefixing if already includes domain
+        if (href.startsWith(`/${domain}/`) || href === `/${domain}`) {
+            return href;
+        }
+        const path = href.startsWith("/") ? href : `/${href}`;
+        return `/${domain}${path}`;
+    };
     
     const {
         brandName,
@@ -89,16 +106,33 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
     };
 
     return (
-        <footer className="relative bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8 overflow-hidden transition-colors">
+        <footer 
+            className="relative bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 ease-in-out"
+            style={{ 
+                paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
+                paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
+                // Fallback: apply defaults if specific side is undefined
+                ...(config?.paddingTop === undefined && { paddingTop: '4rem' }),
+                ...(config?.paddingBottom === undefined && { paddingBottom: '2rem' })
+            }}
+        >
             {/* Background decoration */}
             <div className="absolute inset-0 z-0">
+                {/* Background Image Layer */}
+                {config.sectionBackgroundImage && (
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center transition-all"
+                        style={{ backgroundImage: `url(${config.sectionBackgroundImage})` }}
+                    />
+                )}
+
                 {/* Custom Background Color Layer */}
                 {config.sectionBackground && config.sectionBackground !== "transparent" && (
                     <div 
                         className="absolute inset-0 transition-colors"
                         style={{ 
                             backgroundColor: config.sectionBackground,
-                            opacity: config.sectionBackgroundOpacity ?? 1
+                            opacity: config.sectionBackgroundOpacity ?? (config.sectionBackgroundImage ? 0.8 : 1)
                         }}
                     />
                 )}
@@ -169,7 +203,7 @@ export function FooterV1({ config, onConfigChange }: FooterV1Props) {
                                             />
                                         ) : (
                                             <Link 
-                                                href={link.href}
+                                                href={getSiteLink(link.href)}
                                                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                             >
                                                 {link.label}

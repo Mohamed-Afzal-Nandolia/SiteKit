@@ -100,3 +100,32 @@ export {
     getAllTemplates,
     getAllSiteTemplates,
 } from "./templates";
+
+// Asset Types
+export type {
+    AssetDTO,
+    AssetType,
+    UserRef,
+    CreateAssetRequest,
+    GetAssetRequest,
+    GetAllAssetsRequest,
+    GetAssetsBySiteRequest,
+    GetAssetsByTypeRequest,
+    UpdateAssetRequest,
+    DeleteAssetRequest,
+    AssetSuccessResponse,
+} from "./assetTypes";
+
+export { detectAssetType, getAssetTypeIcon } from "./assetTypes";
+
+// Asset API Service
+export {
+    createAsset,
+    getAssetById,
+    getAllAssets,
+    getAssetsBySite,
+    getAssetsByType,
+    updateAsset,
+    deleteAsset,
+    fileToBase64,
+} from "./assets";

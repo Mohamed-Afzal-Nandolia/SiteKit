@@ -50,6 +50,17 @@ export const SECTION_ENDPOINTS = {
     REORDER_SECTIONS: `${API_V1}/reorder-sections`,
 } as const;
 
+// Asset Endpoints
+export const ASSET_ENDPOINTS = {
+    CREATE_ASSET: `${API_V1}/create-asset`,
+    GET_ASSET: `${API_V1}/get-asset`,
+    GET_ALL_ASSETS: `${API_V1}/get-all-assets`,
+    GET_ASSETS_BY_SITE: `${API_V1}/get-assets-by-site`,
+    GET_ASSETS_BY_TYPE: `${API_V1}/get-assets-by-type`,
+    UPDATE_ASSET: `${API_V1}/update-asset`,
+    DELETE_ASSET: `${API_V1}/delete-asset`,
+} as const;
+
 // Frontend Routes (for navigation/redirects)
 export const ROUTES = {
     HOME: "/",

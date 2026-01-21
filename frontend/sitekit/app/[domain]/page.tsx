@@ -1,123 +1,80 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAllSites, getPagesBySite, getSections, getUserFromToken } from "@/api";
-import { SectionRenderer } from "@/components/renderer/SectionRenderer";
-import type { SiteDTO, PageDTO, PageSectionDTO } from "@/api";
+import { getAllSites, getPagesBySite, getUserFromToken, createPage } from "@/api";
 
-export default function SiteViewPage() {
+// This page redirects to the correct page-specific URL for public view
+// /domain -> /domain/home
+export default function SiteRedirectPage() {
     const params = useParams();
     const router = useRouter();
-    // domain can be either the actual domain string or an ID if routing used ID
-    const domainOrId = params.domain as string;
-
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [site, setSite] = useState<SiteDTO | null>(null);
-    const [sections, setSections] = useState<PageSectionDTO[]>([]);
+    const domain = decodeURIComponent(params.domain as string);
 
     useEffect(() => {
-        const fetchSiteData = async () => {
+        const redirect = async () => {
             try {
-                // Get user for API calls
                 const user = getUserFromToken();
-                if (!user || !user.userId) {
-                    setError("You must be logged in to view this site preview.");
-                    setIsLoading(false);
+                if (!user?.userId) {
+                    router.push("/login");
                     return;
                 }
 
-                setIsLoading(true);
-                
-                // 1. Find the site by domain (or ID) within the user's sites
-                const res = await getAllSites({ user: { id: user.userId } });
-                
-                if (res.data) {
-                    const found = res.data.find(s => s.domain === domainOrId || s.id?.toString() === domainOrId);
-                    if (found) {
-                        // Strict Access Control: Only allow PUBLISHED sites
-                        if (found.siteStatus !== "PUBLISHED") {
-                            // If user is owner, they might expect to see it, but requirements say "should not be accessible"
-                            // The editor uses /edit, so this public view should indeed be blocked.
-                            setError("This site is currently not available.");
-                            setSite(null);
-                            setIsLoading(false);
-                            return;
-                        }
-
-                        setSite(found);
-                        
-                        // 2. Fetch Home Page
-                        const pagesRes = await getPagesBySite({ site: { id: found.id!, user: { id: user.userId! } } });
-                        
-                        if (pagesRes.data) {
-                            const homePage = pagesRes.data.find(p => p.slug === "/") || pagesRes.data[0];
-                            
-                            if (homePage && homePage.id) {
-                                // 3. Fetch Sections
-                                const sectionsRes = await getSections({ userId: user.userId, pageId: homePage.id });
-                                if (sectionsRes.data) {
-                                    setSections(sectionsRes.data);
-                                }
-                            }
-                        }
-                    } else {
-                        setError("Site not found");
-                    }
-                } else if (res.error) {
-                    setError(res.error);
+                // Get site by domain
+                const allSitesRes = await getAllSites({ user: { id: user.userId } });
+                if (!allSitesRes.data) {
+                    router.push("/my-websites");
+                    return;
                 }
-            } catch (err) {
-                console.error("Failed to load site", err);
-                setError("Failed to load site.");
-            } finally {
-                setIsLoading(false);
+
+                const site = allSitesRes.data.find(s => s.domain === domain);
+                if (!site?.id) {
+                    router.push("/my-websites");
+                    return;
+                }
+
+                // Get pages for site
+                const pagesRes = await getPagesBySite({ site: { id: site.id, user: { id: user.userId } } });
+                
+                let targetSlug = "home";
+                
+                if (pagesRes.data && pagesRes.data.length > 0) {
+                    // Prioritize "home" page, otherwise use first page
+                    const homePage = pagesRes.data.find(p => p.slug === "home");
+                    if (homePage) {
+                        targetSlug = "home";
+                    } else {
+                        // No "home" page found, use first page
+                        targetSlug = pagesRes.data[0].slug || "home";
+                    }
+                } else {
+                    // Create home page if none exist
+                    const createRes = await createPage({
+                        site: { id: site.id, user: { id: user.userId } },
+                        name: "Home",
+                        slug: "home"
+                    });
+                    if (createRes.data?.slug) {
+                        targetSlug = createRes.data.slug;
+                    }
+                }
+
+                // Redirect to the page-specific URL
+                router.replace(`/${domain}/${targetSlug}`);
+            } catch {
+                router.push("/my-websites");
             }
         };
 
-        if (domainOrId) {
-            fetchSiteData();
-        }
-    }, [domainOrId]);
-
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
-
-    if (error || !site) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-slate-900 dark:text-white p-4">
-                <h1 className="text-2xl font-bold mb-2">Site Not Found</h1>
-                <p className="text-slate-500 mb-6">{error || "We couldn't find the site you're looking for."}</p>
-                <button 
-                    onClick={() => router.push("/dashboard")}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    Back to Dashboard
-                </button>
-            </div>
-        );
-    }
+        redirect();
+    }, [domain, router]);
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100">
-            <main>
-                {sections.length > 0 ? (
-                    sections.map((section, index) => (
-                        <SectionRenderer key={section.id} section={section} isFirst={index === 0} />
-                    ))
-                ) : (
-                    <div className="py-20 text-center text-slate-500">
-                        This site has no content yet.
-                    </div>
-                )}
-            </main>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+            <div className="flex flex-col items-center gap-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                <p className="text-slate-500">Loading site...</p>
+            </div>
         </div>
     );
 }

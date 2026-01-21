@@ -28,9 +28,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         // If not authenticated, try to refresh the token
         if (!authenticated) {
-            console.log("[AuthProvider] Token invalid/expired, trying refresh...");
             const refreshed = await refreshAccessToken();
-            console.log("[AuthProvider] Refresh result:", refreshed);
             if (refreshed) {
                 authenticated = true;
             }
@@ -80,13 +78,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!isLoggedIn) return;
 
         const interval = setInterval(async () => {
-            console.log("[AuthProvider] Proactively refreshing token...");
             const refreshed = await refreshAccessToken();
             if (refreshed) {
-                console.log("[AuthProvider] Token refreshed successfully!");
                 checkAuth(); // Update the auth state with new token
             } else {
-                console.log("[AuthProvider] Token refresh failed, logging out");
                 forceLogout();
             }
         }, 270000); // 270 seconds = 4.5 minutes

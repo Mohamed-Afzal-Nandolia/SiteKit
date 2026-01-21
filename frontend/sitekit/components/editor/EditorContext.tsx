@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import type { PageSectionDTO } from "@/api";
 import { updateSection, deleteSection, reorderSections } from "@/api";
 
@@ -39,6 +39,7 @@ interface EditorContextState {
     
     // Reordering
     moveSection: (sectionId: number, direction: "up" | "down") => void;
+    reorderSectionsLocal: (newSections: PageSectionDTO[]) => void;
     hasReorderChanges: boolean;
     
     // Add a new section locally (with negative temp ID)
@@ -54,7 +55,18 @@ interface EditorContextState {
     // Undo functionality
     canUndo: boolean;
     undo: () => void;
+    canRedo: boolean;
+    redo: () => void;
     clearHistory: () => void;
+    // Site Data
+    pages: any[];
+    setPages: (pages: any[]) => void;
+    siteDomain: string;
+    setSiteDomain: (domain: string) => void;
+
+    // View Mode
+    viewMode: "desktop" | "tablet" | "mobile";
+    setViewMode: (mode: "desktop" | "tablet" | "mobile") => void;
 }
 
 // Default context value
@@ -72,6 +84,7 @@ const defaultContextValue: EditorContextState = {
     markSectionForDeletion: () => {},
     restoreSection: () => {},
     moveSection: () => {},
+    reorderSectionsLocal: () => {},
     addSection: () => {},
     hasReorderChanges: false,
     hasPendingChanges: false,
@@ -79,7 +92,15 @@ const defaultContextValue: EditorContextState = {
     isSaving: false,
     canUndo: false,
     undo: () => {},
+    canRedo: false,
+    redo: () => {},
     clearHistory: () => {},
+    pages: [],
+    setPages: () => {},
+    siteDomain: "",
+    setSiteDomain: () => {},
+    viewMode: "desktop",
+    setViewMode: () => {},
 };
 
 // Create context
@@ -111,7 +132,34 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     
     // History stack for undo functionality (max 50 entries)
     const [history, setHistory] = useState<HistorySnapshot[]>([]);
+    // Future stack for redo functionality
+    const [future, setFuture] = useState<HistorySnapshot[]>([]);
     const MAX_HISTORY = 50;
+
+    // Additional Site Data
+    const [pages, setPages] = useState<any[]>([]);
+    const [siteDomain, setSiteDomain] = useState<string>("");
+    const [viewMode, setViewMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+    
+    // Auto-detect view mode based on window width
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            if (width < 768) {
+                setViewMode("mobile");
+            } else if (width < 1024) {
+                setViewMode("tablet");
+            } else {
+                setViewMode("desktop");
+            }
+        };
+
+        // Initial check
+        handleResize();
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
     
     // Debounce timer ref for history saving
     const historyTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -120,6 +168,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     
     // Helper to save current state to history (debounced to prevent saving every pixel of drag)
     const saveToHistory = useCallback(() => {
+        // Clear future stack on new changes
+        setFuture([]);
+
         // Create a snapshot string for comparison to avoid duplicate entries
         const currentSnapshotString = JSON.stringify({
             sections: sections,
@@ -180,6 +231,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         
         const lastSnapshot = history[history.length - 1];
         
+        // Save current state to future before undoing
+        const currentSnapshot: HistorySnapshot = {
+             sections: JSON.parse(JSON.stringify(sections)),
+             pendingChanges: new Map(pendingChanges),
+             pendingDeletions: new Set(pendingDeletions),
+        };
+        setFuture(prev => [...prev, currentSnapshot]);
+
         // Restore state from snapshot
         setSectionsState(lastSnapshot.sections);
         setPendingChanges(lastSnapshot.pendingChanges);
@@ -188,10 +247,35 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         
         // Remove the used snapshot from history
         setHistory(prev => prev.slice(0, -1));
-    }, [history]);
+    }, [history, sections, pendingChanges, pendingDeletions]);
+
+    // Redo function
+    const redo = useCallback(() => {
+        if (future.length === 0) return;
+
+        const nextSnapshot = future[future.length - 1];
+
+        // Save current state to history before redoing
+        const currentSnapshot: HistorySnapshot = {
+             sections: JSON.parse(JSON.stringify(sections)),
+             pendingChanges: new Map(pendingChanges),
+             pendingDeletions: new Set(pendingDeletions),
+        };
+        setHistory(prev => [...prev, currentSnapshot]);
+
+        // Restore state from future snapshot
+        setSectionsState(nextSnapshot.sections);
+        setPendingChanges(nextSnapshot.pendingChanges);
+        pendingChangesRef.current = new Map(nextSnapshot.pendingChanges);
+        setPendingDeletions(nextSnapshot.pendingDeletions);
+
+        // Remove the used snapshot from future
+        setFuture(prev => prev.slice(0, -1));
+    }, [future, sections, pendingChanges, pendingDeletions]);
     
-    // Check if undo is available
+    // Check if undo/redo is available
     const canUndo = history.length > 0;
+    const canRedo = future.length > 0;
 
     // Set edit mode
     const setEditMode = useCallback((value: boolean) => {
@@ -302,6 +386,12 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 position: index,
             }));
         });
+    }, [saveToHistory]);
+
+    // Reorder sections locally (drag and drop)
+    const reorderSectionsLocal = useCallback((newSections: PageSectionDTO[]) => {
+        saveToHistory();
+        setSectionsState(newSections.map((s, idx) => ({ ...s, position: idx })));
     }, [saveToHistory]);
 
     // Check if order has changed from original
@@ -573,6 +663,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         markSectionForDeletion,
         restoreSection,
         moveSection,
+        reorderSectionsLocal,
         addSection,
         hasReorderChanges,
         hasPendingChanges: pendingChanges.size > 0 || pendingDeletions.size > 0 || hasReorderChanges || hasAddedSections,
@@ -580,7 +671,15 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         isSaving,
         canUndo,
         undo,
+        canRedo,
+        redo,
         clearHistory: useCallback(() => setHistory([]), []),
+        pages,
+        setPages,
+        siteDomain,
+        setSiteDomain,
+        viewMode,
+        setViewMode,
     };
 
     return (

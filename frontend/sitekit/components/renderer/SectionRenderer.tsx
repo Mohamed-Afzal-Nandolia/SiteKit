@@ -10,7 +10,7 @@ import { CtaV1 } from "../sections/CTA/CtaV1";
 import { FooterV1 } from "../sections/Footer/FooterV1";
 
 // Registry Type
-type ComponentRegistry = Record<string, Record<string, React.FC<{ config: any; onConfigChange?: (newConfig: any) => void }>>>;
+type ComponentRegistry = Record<string, Record<string, React.FC<{ config: any; onConfigChange?: (newConfig: any) => void; domain?: string }>>>;
 
 // Registry Mapping
 const SECTION_REGISTRY: ComponentRegistry = {
@@ -36,7 +36,7 @@ const SECTION_REGISTRY: ComponentRegistry = {
     }
 };
 
-export function SectionRenderer({ section, disableOverlay = false, isFirst = false }: { section: PageSectionDTO, disableOverlay?: boolean, isFirst?: boolean }) {
+export function SectionRenderer({ section, disableOverlay = false, isFirst = false, domain }: { section: PageSectionDTO, disableOverlay?: boolean, isFirst?: boolean, domain?: string }) {
     const { sectionType, variant, config, configJson } = section;
     const { isEditMode, updateSectionConfig, getSectionConfig } = useEditor();
 
@@ -60,11 +60,26 @@ export function SectionRenderer({ section, disableOverlay = false, isFirst = fal
     const sectionId = section.id;
     let parsedConfig: any = {};
     
-    if (sectionId && isEditMode) {
-        // In edit mode, get config from context (includes pending changes)
-        parsedConfig = getSectionConfig(sectionId) || {};
+    if (sectionId && (isEditMode || getSectionConfig)) {
+        // In edit mode OR if we have access to context (Preview Mode), get config from context
+        // getSectionConfig returns null if not found, so we fallback
+        const pendingConfig = getSectionConfig(sectionId);
+        if (pendingConfig) {
+            parsedConfig = pendingConfig;
+        } else {
+             // Fallback to props if context has no data for this section
+            if (configJson) {
+                try {
+                    parsedConfig = JSON.parse(configJson);
+                } catch (e) { }
+            } else if (typeof config === "string") {
+                 try { parsedConfig = JSON.parse(config); } catch (e) { }
+            } else {
+                parsedConfig = config || {};
+            }
+        }
     } else {
-        // Not in edit mode or no section id, parse from props
+        // pure read-only mode (published site)
         if (configJson) {
             try {
                 parsedConfig = JSON.parse(configJson);
@@ -99,7 +114,7 @@ export function SectionRenderer({ section, disableOverlay = false, isFirst = fal
             className="relative"
             style={sectionBackground && sectionBackground !== "transparent" ? { backgroundColor: sectionBackground } : {}}
         >
-            <Component config={parsedConfig} onConfigChange={handleConfigChange} />
+            <Component config={parsedConfig} onConfigChange={handleConfigChange} domain={domain} />
             
             {/* Render Overlay Elements for Public View / Read-Only */}
             {elements.length > 0 && !disableOverlay && (

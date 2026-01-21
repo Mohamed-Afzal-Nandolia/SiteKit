@@ -23,13 +23,10 @@ export default function DashboardPage() {
             
             if (!authenticated) {
                 // Try to refresh the token first
-                console.log("[Dashboard] Token expired, attempting refresh...");
                 const refreshed = await refreshAccessToken();
                 if (refreshed) {
-                    console.log("[Dashboard] Token refreshed successfully!");
                     authenticated = true;
                 } else {
-                    console.log("[Dashboard] Token refresh failed, redirecting to login");
                     router.replace("/login");
                     return;
                 }
@@ -196,14 +193,17 @@ export default function DashboardPage() {
                         </p>
                     </div>
 
-                    {/* Settings Card */}
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group">
-                        <div className="text-4xl mb-4">⚙️</div>
+                    {/* Assets Card */}
+                    <div 
+                        onClick={() => router.push("/assets")}
+                        className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group"
+                    >
+                        <div className="text-4xl mb-4">📁</div>
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-                            Settings
+                            Assets
                         </h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Account settings
+                            Manage your files
                         </p>
                     </div>
                 </div>
