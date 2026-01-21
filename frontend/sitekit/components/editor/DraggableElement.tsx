@@ -12,6 +12,7 @@ interface DraggableElementProps {
     onUpdate: (elementId: string, updates: Partial<SectionElement>) => void;
     onDelete: (elementId: string) => void;
     isFirst?: boolean;
+    otherElements?: SectionElement[];
 }
 
 export function DraggableElement({
@@ -21,6 +22,7 @@ export function DraggableElement({
     onUpdate,
     onDelete,
     isFirst = false,
+    otherElements = [],
 }: DraggableElementProps) {
     const { viewMode } = useEditor();
     
@@ -100,8 +102,9 @@ export function DraggableElement({
     const elementRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const dragStartPos = useRef({ x: 0, y: 0, elementX: 0, elementY: 0 });
-
-    const [guides, setGuides] = useState({ x: false, y: false });
+    
+    // Guides state: store the specific % position to draw the line at, or null if hidden
+    const [guides, setGuides] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
 
     // Debounced update function
     const debouncedUpdateRef = useRef<((content: string) => void) | null>(null);
@@ -172,7 +175,7 @@ export function DraggableElement({
 
         setIsDragging(true);
         setIsSelected(true);
-        setGuides({ x: false, y: false });
+        setGuides({ x: null, y: null });
     };
 
     // Handle dragging
@@ -193,34 +196,78 @@ export function DraggableElement({
             let newX = dragStartPos.current.elementX + deltaX;
             let newY = dragStartPos.current.elementY + deltaY;
 
-            // Snap to center logic
+            // Snap to center logic & neighbors
             const SNAP_THRESHOLD = 1.5; // 1.5% threshold
-            let showGuideX = false;
-            let showGuideY = false;
+            let snapX: number | null = null;
+            let snapY: number | null = null;
 
-            // Snap X (Vertical Center Guide)
+            // --- X Axis Snapping (Vertical Lines) ---
+            // 1. Center of section
             if (Math.abs(newX - 50) < SNAP_THRESHOLD) {
                 newX = 50;
-                showGuideX = true;
+                snapX = 50;
+            } 
+            // 2. Center of other elements
+            else {
+                // Find closest neighbor
+                for (const neighbor of otherElements) {
+                    if (Math.abs(newX - neighbor.x) < SNAP_THRESHOLD) {
+                        newX = neighbor.x;
+                        snapX = neighbor.x;
+                        break; // Found one, snap and stop (prevent jitter between multiple close targets)
+                    }
+                }
             }
 
-            // Snap Y (Horizontal Center Guide)
+            // --- Y Axis Snapping (Horizontal Lines) ---
+            // 1. Center of section
             if (Math.abs(newY - 50) < SNAP_THRESHOLD) {
                 newY = 50;
-                showGuideY = true;
+                snapY = 50;
+            }
+            // 2. Center of other elements
+            else {
+                for (const neighbor of otherElements) {
+                    if (Math.abs(newY - neighbor.y) < SNAP_THRESHOLD) {
+                        newY = neighbor.y;
+                        snapY = neighbor.y;
+                        break;
+                    }
+                }
+            }
+
+            // --- Grid Snapping (12 Cols) ---
+            const colWidth = 100 / 12;
+            if (snapX === null) {
+                const closestCol = Math.round(newX / colWidth);
+                const gridX = closestCol * colWidth;
+                if (Math.abs(newX - gridX) < SNAP_THRESHOLD) {
+                    newX = gridX;
+                    snapX = gridX;
+                }
+            }
+            
+            // --- Row Snapping (25%) ---
+            if (snapY === null) {
+                const closestRow = Math.round(newY / 25);
+                const gridY = closestRow * 25;
+                if (Math.abs(newY - gridY) < SNAP_THRESHOLD) {
+                    newY = gridY;
+                    snapY = gridY;
+                }
             }
 
             // Clamp to section bounds (with some padding)
             newX = Math.max(5, Math.min(95, newX));
             newY = Math.max(5, Math.min(95, newY));
 
-            setGuides({ x: showGuideX, y: showGuideY });
+            setGuides({ x: snapX, y: snapY });
             handleUpdate(responsiveElement.id, { x: newX, y: newY });
         };
 
         const handleEnd = () => {
             setIsDragging(false);
-            setGuides({ x: false, y: false });
+            setGuides({ x: null, y: null });
         };
 
         document.addEventListener("mousemove", handleMove);
@@ -453,19 +500,57 @@ export function DraggableElement({
         }
     }, [isSelected, element.x, element.y, element.content, element.fontSize, element.paddingX, element.paddingY]); // Re-calculate when position/size changes
 
+    // Helper to render grid lines
+    const renderGrid = () => {
+        if (!isDragging) return null;
+        
+        // 12 Column Grid
+        const cols = 12;
+        const colWidth = 100 / cols;
+        const gridLines = [];
+        
+        for (let i = 1; i < cols; i++) {
+            gridLines.push(
+                <div 
+                    key={`col-${i}`}
+                    className="absolute top-0 bottom-0 border-r border-indigo-500/10 pointer-events-none"
+                    style={{ left: `${i * colWidth}%`, width: '1px' }}
+                />
+            );
+        }
+
+        // Horizontal Rows (4 rows / 25%)
+        for (let i = 1; i < 4; i++) {
+            gridLines.push(
+                <div 
+                    key={`row-${i}`}
+                    className="absolute left-0 right-0 border-b border-indigo-500/10 pointer-events-none"
+                    style={{ top: `${i * 25}%`, height: '1px' }}
+                />
+            );
+        }
+
+        return (
+            <div className="absolute inset-0 z-[40] pointer-events-none">
+                {gridLines}
+            </div>
+        );
+    };
+
     return (
         <>
+            {renderGrid()}
             {/* Alignment Guides */}
-            {guides.x && (
+            {guides.x !== null && (
                 <div
                     className="absolute top-0 bottom-0 border-l border-pink-500 z-[150] pointer-events-none"
-                    style={{ left: "50%", transform: "translateX(-50%)" }}
+                    style={{ left: `${guides.x}%` }}
                 />
             )}
-            {guides.y && (
+            {guides.y !== null && (
                 <div
                     className="absolute left-0 right-0 border-t border-pink-500 z-[150] pointer-events-none"
-                    style={{ top: "50%", transform: "translateY(-50%)" }}
+                    style={{ top: `${guides.y}%` }}
                 />
             )}
             <div
@@ -560,6 +645,7 @@ export function ElementOverlay({
                 <div key={element.id} className="pointer-events-auto">
                     <DraggableElement
                         element={element}
+                        otherElements={elements.filter(e => e.id !== element.id)}
                         sectionRef={sectionRef}
                         isEditMode={isEditMode}
                         onUpdate={onUpdateElement}
