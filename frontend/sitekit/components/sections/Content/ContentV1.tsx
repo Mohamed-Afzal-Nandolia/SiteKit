@@ -36,8 +36,10 @@ export function ContentV1({ config, onConfigChange, domain }: ContentV1Props) {
     
     return (
         <section 
-            className="relative bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 ease-in-out min-h-[400px]"
+            className="relative bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 ease-in-out"
             style={{ 
+                // Reduce min-height when padding is customized to allow smaller sections
+                minHeight: (config?.paddingTop === undefined && config?.paddingBottom === undefined) ? '400px' : '100px',
                 paddingTop: config?.paddingTop !== undefined ? `${config.paddingTop}px` : undefined,
                 paddingBottom: config?.paddingBottom !== undefined ? `${config.paddingBottom}px` : undefined,
                 // Fallback: apply defaults if specific side is undefined

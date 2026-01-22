@@ -34,17 +34,25 @@ export function SectionToolbar({
     
     // Ref for the toggle button to calculate position
     const buttonRef = React.useRef<HTMLButtonElement>(null);
-    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
 
     // Calculate position when opening
     React.useLayoutEffect(() => {
         if (isExpanded && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
-            // Position: below the button (rect.bottom), aligned to right (rect.right)
-            // Note: Menu width is ~220px, so we subtract that from rect.right to align right edge
+            const menuHeight = 350; // Approximate menu height
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            
+            // Open upward if not enough space below but enough above
+            const openUpward = spaceBelow < menuHeight && spaceAbove > menuHeight;
+            
             setMenuPosition({
-                top: rect.bottom + window.scrollY + 8, // 8px gap
-                left: rect.right + window.scrollX - 220 
+                top: openUpward 
+                    ? rect.top + window.scrollY - menuHeight - 8  // Position above button
+                    : rect.bottom + window.scrollY + 8,           // Position below button
+                left: rect.right + window.scrollX - 220,
+                openUpward
             });
         }
     }, [isExpanded]);
@@ -102,8 +110,8 @@ export function SectionToolbar({
 
     return (
         <>
-            {/* Toolbar UI - only visible when isVisible is true */}
-            {isVisible && (
+            {/* Toolbar UI - visible when isVisible OR when dropdown is expanded */}
+            {(isVisible || isExpanded) && (
                 <div className="absolute top-2 right-2 z-[100]">
                     {/* Main Toggle Button */}
                     <button
@@ -124,11 +132,12 @@ export function SectionToolbar({
                     {isExpanded && createPortal(
                         <div 
                             data-portal-menu="true"
-                            className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[220px]"
+                            className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[220px] overflow-y-auto"
                             style={{
                                 top: menuPosition.top,
                                 left: menuPosition.left,
-                                width: '220px'
+                                width: '220px',
+                                maxHeight: 'calc(100vh - 100px)'
                             }}
                         >
                             {/* Add Text */}

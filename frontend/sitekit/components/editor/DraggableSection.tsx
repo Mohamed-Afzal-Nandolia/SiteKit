@@ -59,11 +59,11 @@ export function DraggableSection({ section, children }: DraggableSectionProps) {
 
     return (
         <div ref={setNodeRef} style={style}>
-            {/* Drag Handle - positioned on the right side */}
+            {/* Drag Handle - z-index must be higher than SectionWrapper's hover z-[9999] */}
             <div
                 {...attributes}
                 {...listeners}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-[100] flex items-center justify-center w-8 h-12 bg-slate-900/80 hover:bg-slate-800 rounded-lg cursor-grab active:cursor-grabbing touch-manipulation shadow-lg"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-[10000] flex items-center justify-center w-8 h-12 bg-slate-900/80 hover:bg-slate-800 rounded-lg cursor-grab active:cursor-grabbing touch-manipulation shadow-lg"
                 title="Drag to reorder"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/70" viewBox="0 0 24 24" fill="currentColor">

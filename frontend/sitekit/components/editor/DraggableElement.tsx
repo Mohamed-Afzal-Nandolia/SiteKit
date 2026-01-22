@@ -106,13 +106,28 @@ export function DraggableElement({
     // Guides state: store the specific % position to draw the line at, or null if hidden
     const [guides, setGuides] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
 
+    // Fix: Stale closure in debounce logic
+    // We must track the latest handleUpdate function to avoid using an old one captured in the debounce closure
+    const handleUpdateRef = useRef(handleUpdate);
+    useEffect(() => {
+        handleUpdateRef.current = handleUpdate;
+    });
+
+    const [localContent, setLocalContent] = useState(responsiveElement.content || "");
+
+    // Sync local content when prop changes
+    useEffect(() => {
+        setLocalContent(responsiveElement.content || "");
+    }, [responsiveElement.content]);
+
     // Debounced update function
     const debouncedUpdateRef = useRef<((content: string) => void) | null>(null);
 
     useEffect(() => {
         const handler = (content: string) => {
             if (content !== responsiveElement.content) {
-                handleUpdate(responsiveElement.id, { content });
+                // Use the ref to get the latest handleUpdate that has the fresh closure over elements/config
+                handleUpdateRef.current(responsiveElement.id, { content });
             }
         };
         // Simple debounce implementation
@@ -124,20 +139,11 @@ export function DraggableElement({
         return () => clearTimeout(timeout);
     }, [responsiveElement.id, responsiveElement.content]);
 
-    // Update content only when NOT editing to avoid caret jumps
-    useEffect(() => {
-        if (contentRef.current && !isEditing && responsiveElement.content) {
-            if (contentRef.current.innerText !== responsiveElement.content) {
-                contentRef.current.innerText = responsiveElement.content;
-            }
-        }
-    }, [responsiveElement.content, isEditing]);
-
-    // Fix: Restore content when entering edit mode (since dangerouslySetInnerHTML is removed)
+    // Restore content when entering edit mode
     useEffect(() => {
         if (isEditing && contentRef.current) {
             // We use innerText to match the input handler's behavior
-            contentRef.current.innerText = responsiveElement.content || "";
+            contentRef.current.innerText = localContent;
             
             // Focus and place cursor at end
             contentRef.current.focus();
@@ -154,21 +160,29 @@ export function DraggableElement({
         }
     }, [isEditing]);
 
+
     // Handle content editing
     const handleContentBlur = () => {
+        // Delay disabling edit mode slightly to ensure other events (like clicks) fire
         setIsEditing(false);
         if (contentRef.current) {
             const newContent = contentRef.current.innerText;
+            setLocalContent(newContent); // Optimistic update
+            
             // Immediate update on blur
             if (newContent !== responsiveElement.content) {
+                // handleUpdate is safe here as it's from current scope
                 handleUpdate(responsiveElement.id, { content: newContent });
             }
         }
     };
     
     const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+        const newText = e.currentTarget.innerText;
+        setLocalContent(newText); // Update local state immediately
+        
         if (debouncedUpdateRef.current) {
-            debouncedUpdateRef.current(e.currentTarget.innerText);
+            debouncedUpdateRef.current(newText);
         }
     };
 
@@ -621,7 +635,7 @@ export function DraggableElement({
                             }
                         }}
                         className="outline-none whitespace-pre-wrap min-h-[1em] min-w-[1em]"
-                        dangerouslySetInnerHTML={!isEditing ? { __html: responsiveElement.content || "" } : undefined}
+                        dangerouslySetInnerHTML={!isEditing ? { __html: localContent || "" } : undefined}
                     />
                 )}
             </div>
