@@ -50,6 +50,7 @@ export interface SectionElement {
     width?: number;  // percentage width (0-100)
     height?: number; // percentage height (0-100) or "auto"
     objectFit?: "contain" | "cover" | "fill";
+    rotation?: number; // rotation in degrees (0-360)
 }
 
 // Extended section config with elements
@@ -137,7 +138,7 @@ export function createDefaultImageElement(x = 50, y = 50, src = ""): SectionElem
         src,
         width: 30, // 30% of section width
         height: 40, // 40% of section height
-        objectFit: "contain",
+        objectFit: "fill",
         fontSize: 16,
         fontFamily: "Inter, sans-serif",
         fontWeight: "400",

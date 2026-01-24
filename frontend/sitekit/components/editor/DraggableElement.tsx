@@ -25,26 +25,26 @@ export function DraggableElement({
     otherElements = [],
 }: DraggableElementProps) {
     const { viewMode } = useEditor();
-    
+
     // Compute responsive element (merge desktop + mobile overrides)
     const responsiveElement = useMemo(() => {
         // Use true mobile status from viewport, or explicit viewMode if we bring it back
         if (viewMode === "mobile") {
             const mobile = element.mobile || {};
             const merged = { ...element, ...mobile };
-            
+
             // Auto-scale font size for mobile if not explicitly overridden
             if (!mobile.fontSize && element.fontSize) {
                 // Smarter scaling: Large text needs to scale down MORE to fit mobile width
                 if (element.fontSize > 32) {
-                     // Large headings: 45% scale
-                     merged.fontSize = Math.max(20, Math.round(element.fontSize * 0.45));
+                    // Large headings: 45% scale
+                    merged.fontSize = Math.max(20, Math.round(element.fontSize * 0.45));
                 } else if (element.fontSize > 20) {
-                     // Medium text: 60% scale
-                     merged.fontSize = Math.max(16, Math.round(element.fontSize * 0.6));
+                    // Medium text: 60% scale
+                    merged.fontSize = Math.max(16, Math.round(element.fontSize * 0.6));
                 } else {
-                     // Small text: 80% scale (keep readable)
-                     merged.fontSize = Math.max(12, Math.round(element.fontSize * 0.8));
+                    // Small text: 80% scale (keep readable)
+                    merged.fontSize = Math.max(12, Math.round(element.fontSize * 0.8));
                 }
             }
             // Auto-scale padding if not overridden (buttons)
@@ -52,11 +52,11 @@ export function DraggableElement({
                 if (!mobile.paddingX && element.paddingX) merged.paddingX = Math.max(8, Math.round(element.paddingX * 0.6));
                 if (!mobile.paddingY && element.paddingY) merged.paddingY = Math.max(6, Math.round(element.paddingY * 0.6));
                 // Ensure buttons fit on screen width
-                merged.maxWidth = "85vw"; 
+                merged.maxWidth = "85vw";
             }
 
             // Ensure text doesn't overflow
-             if (element.type === "text") {
+            if (element.type === "text") {
                 merged.maxWidth = "85vw";
             }
 
@@ -82,14 +82,14 @@ export function DraggableElement({
             });
 
             const finalUpdates: any = { ...globalUpdates };
-            
+
             if (Object.keys(mobileUpdates).length > 0) {
                 finalUpdates.mobile = {
                     ...(element.mobile || {}),
                     ...mobileUpdates
                 };
             }
-            
+
             onUpdate(id, finalUpdates);
         } else {
             onUpdate(id, updates);
@@ -99,10 +99,15 @@ export function DraggableElement({
     const [isSelected, setIsSelected] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [isRotating, setIsRotating] = useState(false);
+    const [resizeHandle, setResizeHandle] = useState<'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w' | null>(null);
     const elementRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const dragStartPos = useRef({ x: 0, y: 0, elementX: 0, elementY: 0 });
-    
+    const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, width: 0, height: 0 });
+    const rotateStartRef = useRef({ mouseX: 0, mouseY: 0, startRotation: 0, centerX: 0, centerY: 0 });
+
     // Guides state: store the specific % position to draw the line at, or null if hidden
     const [guides, setGuides] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
 
@@ -144,7 +149,7 @@ export function DraggableElement({
         if (isEditing && contentRef.current) {
             // We use innerText to match the input handler's behavior
             contentRef.current.innerText = localContent;
-            
+
             // Focus and place cursor at end
             contentRef.current.focus();
             try {
@@ -168,7 +173,7 @@ export function DraggableElement({
         if (contentRef.current) {
             const newContent = contentRef.current.innerText;
             setLocalContent(newContent); // Optimistic update
-            
+
             // Immediate update on blur
             if (newContent !== responsiveElement.content) {
                 // handleUpdate is safe here as it's from current scope
@@ -176,11 +181,11 @@ export function DraggableElement({
             }
         }
     };
-    
+
     const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
         const newText = e.currentTarget.innerText;
         setLocalContent(newText); // Update local state immediately
-        
+
         if (debouncedUpdateRef.current) {
             debouncedUpdateRef.current(newText);
         }
@@ -188,12 +193,7 @@ export function DraggableElement({
 
     // Start dragging
     const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!isEditMode || isEditing) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!isEditMode || isEditing) return;
+        if (!isEditMode || isEditing || isResizing) return;
 
         e.preventDefault();
         e.stopPropagation();
@@ -211,6 +211,55 @@ export function DraggableElement({
         setIsDragging(true);
         setIsSelected(true);
         setGuides({ x: null, y: null });
+    };
+
+    // Start resizing (for image elements)
+    const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, handle: 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w') => {
+        if (!isEditMode || responsiveElement.type !== 'image') return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+        resizeStartRef.current = {
+            mouseX: clientX,
+            mouseY: clientY,
+            width: responsiveElement.width || 30,
+            height: responsiveElement.height || 40,
+        };
+
+        setResizeHandle(handle);
+        setIsResizing(true);
+        setIsSelected(true);
+    };
+
+    // Start rotating (for image elements)
+    const handleRotateStart = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!isEditMode || responsiveElement.type !== 'image' || !elementRef.current) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+        // Get element center
+        const rect = elementRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        rotateStartRef.current = {
+            mouseX: clientX,
+            mouseY: clientY,
+            startRotation: responsiveElement.rotation || 0,
+            centerX,
+            centerY,
+        };
+
+        setIsRotating(true);
+        setIsSelected(true);
     };
 
     // Handle dragging
@@ -241,7 +290,7 @@ export function DraggableElement({
             if (Math.abs(newX - 50) < SNAP_THRESHOLD) {
                 newX = 50;
                 snapX = 50;
-            } 
+            }
             // 2. Center of other elements
             else {
                 // Find closest neighbor
@@ -281,7 +330,7 @@ export function DraggableElement({
                     snapX = gridX;
                 }
             }
-            
+
             // --- Row Snapping (25%) ---
             if (snapY === null) {
                 const closestRow = Math.round(newY / 25);
@@ -317,6 +366,124 @@ export function DraggableElement({
             document.removeEventListener("touchend", handleEnd);
         };
     }, [isDragging, responsiveElement.id, handleUpdate, sectionRef]);
+
+    // Handle resizing
+    useEffect(() => {
+        if (!isResizing || !sectionRef.current || !resizeHandle) return;
+
+        const handleResizeMove = (e: MouseEvent | TouchEvent) => {
+            const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+            const sectionRect = sectionRef.current!.getBoundingClientRect();
+
+            // Calculate delta as percentage of section size
+            const deltaX = ((clientX - resizeStartRef.current.mouseX) / sectionRect.width) * 100;
+            const deltaY = ((clientY - resizeStartRef.current.mouseY) / sectionRect.height) * 100;
+
+            let newWidth = resizeStartRef.current.width;
+            let newHeight = resizeStartRef.current.height;
+
+            // Adjust based on which handle is being dragged
+            // Corner handles (proportional resize)
+            if (resizeHandle === 'se') {
+                newWidth = resizeStartRef.current.width + deltaX;
+                newHeight = resizeStartRef.current.height + deltaY;
+            } else if (resizeHandle === 'sw') {
+                newWidth = resizeStartRef.current.width - deltaX;
+                newHeight = resizeStartRef.current.height + deltaY;
+            } else if (resizeHandle === 'ne') {
+                newWidth = resizeStartRef.current.width + deltaX;
+                newHeight = resizeStartRef.current.height - deltaY;
+            } else if (resizeHandle === 'nw') {
+                newWidth = resizeStartRef.current.width - deltaX;
+                newHeight = resizeStartRef.current.height - deltaY;
+            }
+            // Edge handles (stretch in one direction only)
+            else if (resizeHandle === 'n') {
+                newHeight = resizeStartRef.current.height - deltaY;
+            } else if (resizeHandle === 's') {
+                newHeight = resizeStartRef.current.height + deltaY;
+            } else if (resizeHandle === 'e') {
+                newWidth = resizeStartRef.current.width + deltaX;
+            } else if (resizeHandle === 'w') {
+                newWidth = resizeStartRef.current.width - deltaX;
+            }
+
+            // Clamp dimensions to reasonable bounds
+            newWidth = Math.max(5, Math.min(100, newWidth));
+            newHeight = Math.max(5, Math.min(100, newHeight));
+
+            handleUpdate(responsiveElement.id, { width: newWidth, height: newHeight });
+        };
+
+        const handleResizeEnd = () => {
+            setIsResizing(false);
+            setResizeHandle(null);
+        };
+
+        document.addEventListener("mousemove", handleResizeMove);
+        document.addEventListener("mouseup", handleResizeEnd);
+        document.addEventListener("touchmove", handleResizeMove, { passive: false });
+        document.addEventListener("touchend", handleResizeEnd);
+
+        return () => {
+            document.removeEventListener("mousemove", handleResizeMove);
+            document.removeEventListener("mouseup", handleResizeEnd);
+            document.removeEventListener("touchmove", handleResizeMove);
+            document.removeEventListener("touchend", handleResizeEnd);
+        };
+    }, [isResizing, resizeHandle, responsiveElement.id, handleUpdate, sectionRef]);
+
+    // Handle rotation
+    useEffect(() => {
+        if (!isRotating) return;
+
+        const handleRotateMove = (e: MouseEvent | TouchEvent) => {
+            const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+            const { centerX, centerY, startRotation } = rotateStartRef.current;
+
+            // Calculate angle from center to current mouse position
+            const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+            // Calculate angle from center to initial mouse position
+            const startAngle = Math.atan2(
+                rotateStartRef.current.mouseY - centerY,
+                rotateStartRef.current.mouseX - centerX
+            ) * (180 / Math.PI);
+
+            // Calculate rotation delta
+            let newRotation = startRotation + (angle - startAngle);
+
+            // Normalize to 0-360
+            newRotation = ((newRotation % 360) + 360) % 360;
+
+            // Snap to 15 degree increments when close
+            const snapAngle = Math.round(newRotation / 15) * 15;
+            if (Math.abs(newRotation - snapAngle) < 5) {
+                newRotation = snapAngle;
+            }
+
+            handleUpdate(responsiveElement.id, { rotation: newRotation });
+        };
+
+        const handleRotateEnd = () => {
+            setIsRotating(false);
+        };
+
+        document.addEventListener("mousemove", handleRotateMove);
+        document.addEventListener("mouseup", handleRotateEnd);
+        document.addEventListener("touchmove", handleRotateMove, { passive: false });
+        document.addEventListener("touchend", handleRotateEnd);
+
+        return () => {
+            document.removeEventListener("mousemove", handleRotateMove);
+            document.removeEventListener("mouseup", handleRotateEnd);
+            document.removeEventListener("touchmove", handleRotateMove);
+            document.removeEventListener("touchend", handleRotateEnd);
+        };
+    }, [isRotating, responsiveElement.id, handleUpdate]);
 
     // Handle click outside to deselect
     useEffect(() => {
@@ -360,11 +527,12 @@ export function DraggableElement({
     }, [isSelected, responsiveElement.x, responsiveElement.y, responsiveElement.content, responsiveElement.fontSize, responsiveElement.paddingX, responsiveElement.paddingY]); // Re-calculate when position/size changes
 
     // Element styles
+    const rotation = responsiveElement.type === 'image' ? (responsiveElement.rotation || 0) : 0;
     const elementStyles: React.CSSProperties = {
         position: "absolute",
         left: `${responsiveElement.x}%`,
         top: `${responsiveElement.y}%`,
-        transform: "translate(-50%, -50%) scale(var(--element-scale, 1))",
+        transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(var(--element-scale, 1))`,
         transformOrigin: "center center",
         maxWidth: "100%",
         fontFamily: responsiveElement.fontFamily,
@@ -402,13 +570,13 @@ export function DraggableElement({
             minWidth: "auto",   // Remove fixed minimum width to fit short text
             // Use fit-content to wrap nicely but allow growth
             width: "fit-content",
-            maxWidth: "100%", 
+            maxWidth: "100%",
             borderRadius: `${responsiveElement.borderRadius !== undefined ? responsiveElement.borderRadius : 4}px`,
             borderWidth: `${responsiveElement.borderWidth || 0}px`,
             borderStyle: "solid",
             borderColor: responsiveElement.borderColor || "transparent",
             // Ensure long text wraps only if it exceeds max-width
-            wordBreak: "break-word", 
+            wordBreak: "break-word",
             overflowWrap: "break-word",
             whiteSpace: "pre-wrap",
             // Use text-shadow to simulate text stroke as it's more widely supported than -webkit-text-stroke
@@ -448,7 +616,7 @@ export function DraggableElement({
                         const byteArray = new Uint8Array(byteNumbers);
                         const blob = new Blob([byteArray], { type: responsiveElement.fileType });
                         const blobUrl = URL.createObjectURL(blob);
-                        
+
                         // Open in new tab (browser handles download/view)
                         window.open(blobUrl, responsiveElement.newTab ? "_blank" : "_self");
 
@@ -538,15 +706,15 @@ export function DraggableElement({
     // Helper to render grid lines
     const renderGrid = () => {
         if (!isDragging) return null;
-        
+
         // 12 Column Grid
         const cols = 12;
         const colWidth = 100 / cols;
         const gridLines = [];
-        
+
         for (let i = 1; i < cols; i++) {
             gridLines.push(
-                <div 
+                <div
                     key={`col-${i}`}
                     className="absolute top-0 bottom-0 border-r border-indigo-500/10 pointer-events-none"
                     style={{ left: `${i * colWidth}%`, width: '1px' }}
@@ -557,7 +725,7 @@ export function DraggableElement({
         // Horizontal Rows (4 rows / 25%)
         for (let i = 1; i < 4; i++) {
             gridLines.push(
-                <div 
+                <div
                     key={`row-${i}`}
                     className="absolute left-0 right-0 border-b border-indigo-500/10 pointer-events-none"
                     style={{ top: `${i * 25}%`, height: '1px' }}
@@ -604,17 +772,104 @@ export function DraggableElement({
             >
                 {/* Render content based on element type */}
                 {responsiveElement.type === "image" && responsiveElement.src ? (
-                    <img
-                        src={responsiveElement.src}
-                        alt="Asset"
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: responsiveElement.objectFit || "contain",
-                            pointerEvents: "none",
-                        }}
-                        draggable={false}
-                    />
+                    <>
+                        <img
+                            src={responsiveElement.src}
+                            alt="Asset"
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: responsiveElement.objectFit || "fill",
+                                pointerEvents: "none",
+                            }}
+                            draggable={false}
+                        />
+                        {/* Resize handles for images */}
+                        {isEditMode && isSelected && (
+                            <>
+                                {/* Corner handles */}
+                                {/* NW Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 'nw')}
+                                    onTouchStart={(e) => handleResizeStart(e, 'nw')}
+                                    className="absolute -top-2 -left-2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-nwse-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+                                {/* NE Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 'ne')}
+                                    onTouchStart={(e) => handleResizeStart(e, 'ne')}
+                                    className="absolute -top-2 -right-2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-nesw-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+                                {/* SW Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 'sw')}
+                                    onTouchStart={(e) => handleResizeStart(e, 'sw')}
+                                    className="absolute -bottom-2 -left-2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-nesw-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+                                {/* SE Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 'se')}
+                                    onTouchStart={(e) => handleResizeStart(e, 'se')}
+                                    className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-nwse-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+
+                                {/* Edge handles (stretch) */}
+                                {/* N Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 'n')}
+                                    onTouchStart={(e) => handleResizeStart(e, 'n')}
+                                    className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-6 h-3 bg-white border-2 border-blue-500 rounded-full cursor-ns-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+                                {/* S Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 's')}
+                                    onTouchStart={(e) => handleResizeStart(e, 's')}
+                                    className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-3 bg-white border-2 border-blue-500 rounded-full cursor-ns-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+                                {/* E Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 'e')}
+                                    onTouchStart={(e) => handleResizeStart(e, 'e')}
+                                    className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-6 bg-white border-2 border-blue-500 rounded-full cursor-ew-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+                                {/* W Handle */}
+                                <div
+                                    onMouseDown={(e) => handleResizeStart(e, 'w')}
+                                    onTouchStart={(e) => handleResizeStart(e, 'w')}
+                                    className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-6 bg-white border-2 border-blue-500 rounded-full cursor-ew-resize z-[200] hover:bg-blue-100 shadow-md"
+                                    style={{ touchAction: 'none' }}
+                                />
+
+                                {/* Rotation handle - above the element */}
+                                <div
+                                    className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center z-[200]"
+                                >
+                                    {/* Line connecting to element */}
+                                    <div className="w-0.5 h-4 bg-blue-500" />
+                                    {/* Rotate button */}
+                                    <div
+                                        onMouseDown={handleRotateStart}
+                                        onTouchStart={handleRotateStart}
+                                        className="w-5 h-5 bg-white border-2 border-blue-500 rounded-full cursor-grab hover:bg-blue-100 shadow-md flex items-center justify-center"
+                                        style={{ touchAction: 'none' }}
+                                        title={`Rotation: ${Math.round(responsiveElement.rotation || 0)}°`}
+                                    >
+                                        <svg className="w-3 h-3 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 12a9 9 0 11-9-9" />
+                                            <path d="M12 3l3 3-3 3" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </>
                 ) : (
                     <div
                         ref={contentRef}
