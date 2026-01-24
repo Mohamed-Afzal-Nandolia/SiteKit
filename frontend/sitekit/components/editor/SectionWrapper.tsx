@@ -43,16 +43,16 @@ export function SectionWrapper({
     const sectionId = section.id;
     // Get pending config from context, OR fallback to existing section config
     const pendingConfig = sectionId ? getSectionConfig(sectionId) : undefined;
-    
+
     // Parse the initial config from props
     let initialConfig: ExtendedSectionConfig = {};
     try {
         if (section.configJson) {
             initialConfig = JSON.parse(section.configJson);
         } else if (typeof section.config === "string") {
-             initialConfig = JSON.parse(section.config);
+            initialConfig = JSON.parse(section.config);
         } else {
-             initialConfig = (section.config as ExtendedSectionConfig) || {};
+            initialConfig = (section.config as ExtendedSectionConfig) || {};
         }
     } catch (e) {
         console.error("Failed to parse section config", e);
@@ -241,9 +241,9 @@ export function SectionWrapper({
             // If dragging top handle: moving down (positive dy) should DECREASE padding
             // If dragging bottom handle: moving down (positive dy) should INCREASE padding
             const paddingChange = dragState.handle === 'top' ? -dy : dy;
-            
+
             let newPadding = Math.max(0, dragState.startPadding + paddingChange);
-            
+
             // Apply step of 5px for easier alignment
             newPadding = Math.round(newPadding / 5) * 5;
 
@@ -284,7 +284,7 @@ export function SectionWrapper({
         e.stopPropagation();
         if (!sectionId) return;
 
-        const currentPadding = handle === 'top' 
+        const currentPadding = handle === 'top'
             ? (currentConfig.paddingTop ?? 80) // Default 80px (py-20)
             : (currentConfig.paddingBottom ?? 80);
 
@@ -294,7 +294,7 @@ export function SectionWrapper({
             startY: e.clientY,
             startPadding: currentPadding
         });
-        
+
         document.body.style.cursor = 'ns-resize';
         document.body.style.userSelect = 'none'; // Disable selection
     };
@@ -324,12 +324,12 @@ export function SectionWrapper({
                     }}
                 />
             )}
-            
+
             {/* Resize Handles - Visible when selected or hovered */}
             {(isSelected || isHovered) && (
                 <>
                     {/* Top Handle */}
-                    <div 
+                    <div
                         className="absolute top-0 left-0 right-0 h-4 z-[101] cursor-ns-resize flex items-start justify-center group"
                         onMouseDown={(e) => startResize(e, 'top')}
                     >
@@ -342,13 +342,13 @@ export function SectionWrapper({
                     </div>
 
                     {/* Bottom Handle */}
-                    <div 
+                    <div
                         className="absolute bottom-0 left-0 right-0 h-4 z-[101] cursor-ns-resize flex items-end justify-center group"
                         onMouseDown={(e) => startResize(e, 'bottom')}
                     >
                         {/* Visual indicator */}
                         <div className="w-24 h-5 -mb-2.5 bg-blue-500 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white cursor-ns-resize">
-                             <div className="w-10 h-1 border-t-2 border-b-2 border-white/50" />
+                            <div className="w-10 h-1 border-t-2 border-b-2 border-white/50" />
                         </div>
                         {/* Hover hint line */}
                         <div className="absolute bottom-0 w-full border-b-2 border-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -358,9 +358,8 @@ export function SectionWrapper({
 
             {/* Section Controls - Visible on hover or when selected */}
             <div
-                className={`absolute top-2 left-2 md:top-4 md:left-4 z-[100] flex items-center gap-0.5 md:gap-1 bg-slate-900 shadow-lg rounded-lg p-1 md:p-1.5 transition-opacity duration-200 ${
-                    isHovered || isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
+                className={`absolute top-2 left-2 md:top-4 md:left-4 z-[100] flex items-center gap-0.5 md:gap-1 bg-slate-900 shadow-lg rounded-lg p-1 md:p-1.5 transition-opacity duration-200 ${isHovered || isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                    }`}
                 style={{ pointerEvents: isHovered || isSelected ? 'auto' : 'none' }}
             >
                 {/* Section Type Label - hidden on mobile */}

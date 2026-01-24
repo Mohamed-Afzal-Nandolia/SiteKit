@@ -31,7 +31,7 @@ export function SectionToolbar({
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAssetManager, setShowAssetManager] = useState(false);
-    
+
     // Ref for the toggle button to calculate position
     const buttonRef = React.useRef<HTMLButtonElement>(null);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
@@ -43,12 +43,12 @@ export function SectionToolbar({
             const menuHeight = 350; // Approximate menu height
             const spaceBelow = window.innerHeight - rect.bottom;
             const spaceAbove = rect.top;
-            
+
             // Open upward if not enough space below but enough above
             const openUpward = spaceBelow < menuHeight && spaceAbove > menuHeight;
-            
+
             setMenuPosition({
-                top: openUpward 
+                top: openUpward
                     ? rect.top + window.scrollY - menuHeight - 8  // Position above button
                     : rect.bottom + window.scrollY + 8,           // Position below button
                 left: rect.right + window.scrollX - 220,
@@ -130,7 +130,7 @@ export function SectionToolbar({
 
                     {/* Expanded Menu - Rendered in Portal */}
                     {isExpanded && createPortal(
-                        <div 
+                        <div
                             data-portal-menu="true"
                             className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[220px] overflow-y-auto"
                             style={{
@@ -240,26 +240,39 @@ export function SectionToolbar({
                             {/* Background Color Picker */}
                             {showBackgroundPicker && (
                                 <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                                    <div className="grid grid-cols-7 gap-2 mb-2">
-                                        {COLOR_PRESETS.map((color) => (
-                                            <button
-                                                key={color}
-                                                onClick={() => handleBackgroundSelect(color)}
-                                                className={`w-6 h-6 rounded-full border-2 hover:scale-110 transition-transform ${currentBackground === color
-                                                    ? "border-blue-500 ring-2 ring-blue-500/30"
-                                                    : "border-slate-300 dark:border-slate-600"
-                                                    }`}
-                                                style={{ backgroundColor: color }}
-                                            />
-                                        ))}
+                                    {/* Custom Color Picker */}
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <input
+                                            type="color"
+                                            value={currentBackground && currentBackground !== "transparent" ? currentBackground : "#ffffff"}
+                                            onChange={(e) => {
+                                                if (onBackgroundChange) {
+                                                    onBackgroundChange(e.target.value);
+                                                }
+                                            }}
+                                            className="w-10 h-10 rounded border-2 border-slate-300 dark:border-slate-600 cursor-pointer"
+                                            title="Pick custom color"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={currentBackground || ""}
+                                            onChange={(e) => {
+                                                if (onBackgroundChange) {
+                                                    onBackgroundChange(e.target.value);
+                                                }
+                                            }}
+                                            placeholder="#000000"
+                                            className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-mono text-slate-900 dark:text-white"
+                                        />
                                     </div>
+
                                     <button
                                         onClick={() => handleBackgroundSelect("transparent")}
                                         className="w-full px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
                                     >
                                         Remove Background Color
                                     </button>
-                                    
+
                                     {/* Separate Remove Background Image button if image exists */}
                                     {currentBackgroundImage && (
                                         <button
