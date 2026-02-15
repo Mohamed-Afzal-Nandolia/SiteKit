@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { Logo } from "../ui/Logo";
 import { login } from "@/api";
 
 interface LoginFormProps {
@@ -73,18 +74,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#2563eb] shadow-lg shadow-[#2563eb]/30 mb-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8 text-white"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <polyline points="10 17 15 12 10 7" />
-              <line x1="15" y1="12" x2="3" y2="12" />
-            </svg>
+            <Logo className="text-white" size={32} />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
             Welcome back

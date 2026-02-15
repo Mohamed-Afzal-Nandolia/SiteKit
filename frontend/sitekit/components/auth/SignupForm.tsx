@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Logo } from "@/components/ui/Logo";
 import { createUser } from "@/api";
 
 export function SignupForm() {
@@ -89,19 +90,7 @@ export function SignupForm() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#2563eb] shadow-lg shadow-[#2563eb]/30 mb-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8 text-white"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="8.5" cy="7" r="4" />
-              <line x1="20" y1="8" x2="20" y2="14" />
-              <line x1="23" y1="11" x2="17" y2="11" />
-            </svg>
+            <Logo className="text-white" size={32} />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
             Create your account
