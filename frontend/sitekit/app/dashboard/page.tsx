@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { isAuthenticated, getUserFromToken, clearAuth, refreshAccessToken } from "@/api";
 import type { JwtPayload } from "@/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Logo } from "@/components/ui/Logo";
 
 export const dynamic = "force-static";
 
@@ -69,18 +70,7 @@ export default function DashboardPage() {
                         {/* Logo */}
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-[#2563eb] flex items-center justify-center shadow-lg shadow-[#2563eb]/30">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-6 w-6 text-white"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                >
-                                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                                    <path d="M2 17l10 5 10-5" />
-                                    <path d="M2 12l10 5 10-5" />
-                                </svg>
+                                <Logo className="text-white" size={24} />
                             </div>
                             <span className="text-xl font-bold text-slate-900 dark:text-white">
                                 SiteKit
