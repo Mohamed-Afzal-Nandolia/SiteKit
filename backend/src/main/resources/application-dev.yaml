@@ -48,3 +48,10 @@ logging:
 
     # Web requests
     org.springframework.web: DEBUG
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # Expose all endpoints
